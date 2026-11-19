@@ -364,13 +364,128 @@
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
         }
+        /* ================= 极限视觉升级：深空玻璃拟态 & 精品手游质感 ================= */
+        #app-root {
+            background: radial-gradient(circle at 50% 0%, rgba(30, 27, 75, 0.72) 0%, rgba(11, 14, 20, 0.92) 70%) !important;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(99, 102, 241, 0.15) !important;
+        }
+
+        /* 让顶层视图透明化，使底层 60fps 星空极光与动态战场画布自然透出 */
+        #view-home, #view-prep, #view-run {
+            background: transparent !important;
+            position: relative;
+            z-index: 5;
+        }
+
+        #view-home > header, #view-home > section,
+        #view-prep > header, #view-prep > footer,
+        #view-run > header, #view-run > footer {
+            background: rgba(13, 19, 36, 0.86) !important;
+            border-color: rgba(148, 163, 184, 0.16) !important;
+        }
+
+        /* 卡片与列表项的深空半透明质感（零实时模糊开销，丝滑不掉帧） */
+        .bg-slate-900, .bg-slate-900\/90, .bg-slate-900\/95 {
+            background-color: rgba(15, 23, 42, 0.84) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.28);
+        }
+
+        .bg-slate-950, .bg-slate-950\/90 {
+            background-color: rgba(9, 13, 24, 0.86) !important;
+        }
+
+        /* 选中关卡/卡牌的鎏金呼吸光环 */
+        .stage-card-active {
+            border-color: rgba(251, 191, 36, 0.85) !important;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.88) 0%, rgba(120, 53, 15, 0.45) 100%) !important;
+            box-shadow: 0 0 24px rgba(245, 158, 11, 0.28), inset 0 1px 0 rgba(254, 243, 199, 0.35) !important;
+        }
+
+        /* 主按钮金属流光扫过质感 */
+        #btn-start-stage, #btn-prep-next, #btn-next-floor, #btn-leave-village, #btn-leave-town, #btn-leave-sanctuary {
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 6px 22px rgba(245, 158, 11, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.55) !important;
+        }
+        #btn-start-stage::after, #btn-prep-next::after, #btn-next-floor::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -120%;
+            width: 60%; height: 100%;
+            background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.45) 50%, transparent 80%);
+            animation: btnSheen 3.2s infinite ease-in-out;
+            pointer-events: none;
+        }
+        @keyframes btnSheen {
+            0%, 60% { left: -120%; }
+            100% { left: 160%; }
+        }
+
+        /* 按钮物理按压回弹 */
+        button {
+            transition: transform 0.12s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
+        }
+        button:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+
+        /* 血条与能量条高光渐变与平滑过渡 */
+        #hud-hp-bar {
+            background: linear-gradient(90deg, #e11d48 0%, #f43f5e 60%, #fb7185 100%) !important;
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.55);
+            transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        }
+        #hud-mp-bar {
+            background: linear-gradient(90deg, #0284c7 0%, #38bdf8 60%, #7dd3fc 100%) !important;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.55);
+            transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        }
+        #hud-shield-bar {
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.85);
+            transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        }
+
+        /* 怪物阶级专属卡片气场 */
+        .tier-card-elite {
+            border-color: rgba(168, 85, 247, 0.55) !important;
+            box-shadow: 0 0 16px rgba(168, 85, 247, 0.18), inset 0 1px 0 rgba(216, 180, 254, 0.25);
+        }
+        .tier-card-boss {
+            border-color: rgba(245, 158, 11, 0.72) !important;
+            background: linear-gradient(135deg, rgba(30, 20, 40, 0.85), rgba(69, 26, 3, 0.48)) !important;
+            box-shadow: 0 0 22px rgba(245, 158, 11, 0.25), inset 0 1px 0 rgba(253, 224, 71, 0.32);
+        }
+        .tier-card-hero {
+            border-color: rgba(244, 63, 94, 0.88) !important;
+            background: linear-gradient(135deg, rgba(49, 14, 58, 0.88), rgba(127, 29, 29, 0.55), rgba(15, 23, 42, 0.92)) !important;
+            box-shadow: 0 0 28px rgba(244, 63, 94, 0.38), inset 0 0 18px rgba(168, 85, 247, 0.25);
+            animation: heroCardBreath 2.6s infinite ease-in-out;
+        }
+        @keyframes heroCardBreath {
+            0%, 100% { box-shadow: 0 0 22px rgba(244, 63, 94, 0.32), inset 0 0 14px rgba(168, 85, 247, 0.22); }
+            50% { box-shadow: 0 0 34px rgba(244, 63, 94, 0.58), inset 0 0 22px rgba(251, 191, 36, 0.32); }
+        }
+
+        /* 首领/英雄降临电影级警示横幅 */
+        @keyframes bossBannerIn {
+            0% { opacity: 0; transform: scaleY(0.15) translateY(-10px); filter: blur(6px); }
+            15% { opacity: 1; transform: scaleY(1.06) translateY(0); filter: blur(0); }
+            82% { opacity: 1; transform: scaleY(1) translateY(0); filter: blur(0); }
+            100% { opacity: 0; transform: scaleY(0.2) translateY(8px); filter: blur(4px); }
+        }
+        .boss-intro-banner {
+            animation: bossBannerIn 1.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
     </style>
 </head>
 <body class="w-screen h-[100dvh] flex items-center justify-center bg-slate-950">
 
     <!-- 主容器：适配手机竖屏与桌面端居中显示 -->
     <div id="app-root" class="relative w-full max-w-md h-full max-h-[900px] bg-slate-900 sm:rounded-3xl sm:border sm:border-slate-800 shadow-2xl flex flex-col justify-between overflow-hidden">
-
+        <!-- 底层 60fps 动态场景氛围画布（星空极光 / 山峦 / 战场火星 / 末地虚空 / 圣地微光） -->
+        <canvas id="ambient-bg-canvas" class="pointer-events-none absolute inset-0 w-full h-full z-0"></canvas>
+        <!-- 首领/英雄降临电影级横幅容器 -->
+        <div id="boss-banner-overlay" class="pointer-events-none fixed inset-x-0 top-1/3 z-[65] flex justify-center px-4 hidden"></div>
         <!-- ========================================================= -->
         <!-- 视图 1：游戏首页（关卡选择 + 五大难度）                     -->
         <!-- ========================================================= -->
@@ -780,7 +895,8 @@
         </div>
         <!-- 全局战斗视觉特效层（独立于卡片刷新，保证多段连击特效完整播完） -->
         <div id="vfx-layer" class="pointer-events-none fixed inset-0 z-[60] overflow-hidden"></div>
-
+        <!-- 顶层 60fps 物理火花粒子 & 发光剑弧 & 法阵画布 -->
+        <canvas id="vfx-canvas" class="pointer-events-none fixed inset-0 w-full h-full z-[61]"></canvas>
         <script>
         // =========================================================================
         // 一、 核心常量数据：关卡、五大难度、三大初始肉鸽天赋、九大职业、怪物图鉴
@@ -2635,22 +2751,93 @@
         
         let audioCtx = null;
         let masterGain = null;
+        let bgmBus = null;
+        let sfxBus = null;
+        let reverbSend = null;
+        let delaySend = null;
         let noiseBuffer = null;
         let bgmStep = 0;
-        let bgmTimer = null;
+        let bgmNextNoteTime = 0;
+        let bgmSchedulerTimer = null;
+
+        // 程序化生成 2.4 秒音乐厅立体声混响脉冲响应（Impulse Response），赋予所有乐器电影级空间感
+        function createConcertHallImpulse(ctx, duration = 2.4, decay = 2.8) {
+            const sr = ctx.sampleRate;
+            const len = Math.floor(sr * duration);
+            const buf = ctx.createBuffer(2, len, sr);
+            for (let ch = 0; ch < 2; ch++) {
+                const data = buf.getChannelData(ch);
+                for (let i = 0; i < len; i++) {
+                    const env = Math.pow(1 - i / len, decay);
+                    // 加入轻微早期反射质感与立体声去相关
+                    const early = i < sr * 0.06 ? (Math.sin(i * 0.08 + ch) * 0.25) : 0;
+                    data[i] = ((Math.random() * 2 - 1) + early) * env;
+                }
+            }
+            return buf;
+        }
 
         function ensureAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+                // 主总线压缩器，防止多声部交响与十连斩爆音削波
                 const comp = audioCtx.createDynamicsCompressor();
-                comp.threshold.value = -14;
-                comp.ratio.value = 6;
+                comp.threshold.value = -12;
+                comp.knee.value = 18;
+                comp.ratio.value = 5;
+                comp.attack.value = 0.004;
+                comp.release.value = 0.18;
+
                 masterGain = audioCtx.createGain();
-                masterGain.gain.value = 0.85;
+                masterGain.gain.value = 0.88;
                 masterGain.connect(comp);
                 comp.connect(audioCtx.destination);
 
-                // 预生成 1 秒白噪声缓存（用于剑风、重拳、爆炸、毒雾、弓弦与打击乐鼓点）
+                // 分离 BGM 与 SFX 独立母线，层次清晰绝不打架
+                bgmBus = audioCtx.createGain();
+                bgmBus.gain.value = 0.52;
+                bgmBus.connect(masterGain);
+
+                sfxBus = audioCtx.createGain();
+                sfxBus.gain.value = 0.85;
+                sfxBus.connect(masterGain);
+
+                // 立体声大厅混响总线
+                const convolver = audioCtx.createConvolver();
+                convolver.buffer = createConcertHallImpulse(audioCtx, 1.4, 2.5)
+                const revFilter = audioCtx.createBiquadFilter();
+                revFilter.type = 'lowpass';
+                revFilter.frequency.value = 3400;
+                const revWet = audioCtx.createGain();
+                revWet.gain.value = 0.42;
+                reverbSend = audioCtx.createGain();
+                reverbSend.gain.value = 1.0;
+                reverbSend.connect(convolver);
+                convolver.connect(revFilter);
+                revFilter.connect(revWet);
+                revWet.connect(masterGain);
+
+                // 立体声回声延迟总线（给水晶竖琴、魔导师法术与史诗主奏增加空灵感）
+                const delayNode = audioCtx.createDelay(1.0);
+                delayNode.delayTime.value = 0.27;
+                const delayFb = audioCtx.createGain();
+                delayFb.gain.value = 0.32;
+                const delayFilter = audioCtx.createBiquadFilter();
+                delayFilter.type = 'lowpass';
+                delayFilter.frequency.value = 2400;
+                const delayWet = audioCtx.createGain();
+                delayWet.gain.value = 0.28;
+                delaySend = audioCtx.createGain();
+                delaySend.gain.value = 1.0;
+                delaySend.connect(delayNode);
+                delayNode.connect(delayFilter);
+                delayFilter.connect(delayFb);
+                delayFb.connect(delayNode);
+                delayFilter.connect(delayWet);
+                delayWet.connect(masterGain);
+
+                // 预生成 1 秒白噪声缓冲
                 const sr = audioCtx.sampleRate;
                 noiseBuffer = audioCtx.createBuffer(1, sr, sr);
                 const data = noiseBuffer.getChannelData(0);
@@ -2663,26 +2850,44 @@
             }
         }
 
-        function playTone(freq, endFreq, type, duration, vol = 0.35, delay = 0) {
+        // 高质感带滤波器与混响发送的通用合成器发声函数
+        function playTone(freq, endFreq, type, duration, vol = 0.35, delay = 0, useReverb = 0.22, targetBus = null) {
             if (!audioCtx || !masterGain) return;
             const t0 = audioCtx.currentTime + delay;
             const osc = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
             const gain = audioCtx.createGain();
+
             osc.type = type;
             osc.frequency.setValueAtTime(Math.max(20, freq), t0);
             if (endFreq && endFreq !== freq) {
                 osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), t0 + duration);
             }
-            gain.gain.setValueAtTime(0.001, t0);
-            gain.gain.linearRampToValueAtTime(vol, t0 + Math.min(0.015, duration * 0.2));
-            gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
-            osc.connect(gain);
-            gain.connect(masterGain);
+
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(type === 'sawtooth' || type === 'square' ? Math.min(4800, freq * 5) : 9000, t0);
+            filter.frequency.exponentialRampToValueAtTime(Math.max(320, freq * 1.4), t0 + duration);
+
+            gain.gain.setValueAtTime(0.0008, t0);
+            gain.gain.linearRampToValueAtTime(vol, t0 + Math.min(0.014, duration * 0.22));
+            gain.gain.exponentialRampToValueAtTime(0.0008, t0 + duration);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(targetBus || sfxBus || masterGain);
+
+            if (useReverb > 0 && reverbSend) {
+                const rGain = audioCtx.createGain();
+                rGain.gain.value = useReverb;
+                gain.connect(rGain);
+                rGain.connect(reverbSend);
+            }
+
             osc.start(t0);
-            osc.stop(t0 + duration + 0.02);
+            osc.stop(t0 + duration + 0.03);
         }
 
-        function playNoise(duration = 0.12, vol = 0.25, filterFreq = 1200, filterType = 'bandpass', delay = 0) {
+        function playNoise(duration = 0.12, vol = 0.25, filterFreq = 1200, filterType = 'bandpass', delay = 0, targetBus = null) {
             if (!audioCtx || !masterGain || !noiseBuffer) return;
             const t0 = audioCtx.currentTime + delay;
             const src = audioCtx.createBufferSource();
@@ -2692,23 +2897,287 @@
             filter.frequency.setValueAtTime(filterFreq, t0);
             const gain = audioCtx.createGain();
             gain.gain.setValueAtTime(vol, t0);
-            gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+            gain.gain.exponentialRampToValueAtTime(0.0008, t0 + duration);
             src.connect(filter);
             filter.connect(gain);
-            gain.connect(masterGain);
+            gain.connect(targetBus || sfxBus || masterGain);
             src.start(t0);
-            src.stop(t0 + duration + 0.02);
+            src.stop(t0 + duration + 0.03);
+        }
+
+        // ================= 交响配乐四大高定乐器（精准音频时钟触发） =================
+        // 1. 温暖立体声失谐弦乐 Pad（史诗氛围铺底）
+        function playOrchestraPad(freqs, t0, dur, vol = 0.085, cutoff = 1100) {
+            if (!audioCtx || !bgmBus) return;
+            freqs.forEach(f => {
+                [-5, 5].forEach(detuneCents => {
+                    const osc = audioCtx.createOscillator();
+                    const filter = audioCtx.createBiquadFilter();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(f, t0);
+                    osc.detune.setValueAtTime(detuneCents, t0);
+
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(cutoff * 0.55, t0);
+                    filter.frequency.linearRampToValueAtTime(cutoff, t0 + dur * 0.4);
+                    filter.frequency.linearRampToValueAtTime(cutoff * 0.6, t0 + dur);
+
+                    gain.gain.setValueAtTime(0.0005, t0);
+                    gain.gain.linearRampToValueAtTime(vol, t0 + Math.min(0.32, dur * 0.3));
+                    gain.gain.setValueAtTime(vol * 0.85, t0 + dur * 0.72);
+                    gain.gain.exponentialRampToValueAtTime(0.0005, t0 + dur);
+
+                    osc.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(bgmBus);
+                    if (reverbSend) {
+                        const r = audioCtx.createGain();
+                        r.gain.value = 0.55;
+                        gain.connect(r);
+                        r.connect(reverbSend);
+                    }
+                    osc.start(t0);
+                    osc.stop(t0 + dur + 0.06);
+                });
+            });
+        }
+
+        // 2. 水晶竖琴 / FM 钟琴（清澈空灵，适合星空探索、首页与圣地）
+        function playCrystalHarp(freq, t0, dur = 0.75, vol = 0.14) {
+            if (!audioCtx || !bgmBus) return;
+            const carrier = audioCtx.createOscillator();
+            const mod = audioCtx.createOscillator();
+            const modGain = audioCtx.createGain();
+            const gain = audioCtx.createGain();
+
+            carrier.type = 'sine';
+            carrier.frequency.setValueAtTime(freq, t0);
+            mod.type = 'triangle';
+            mod.frequency.setValueAtTime(freq * 2, t0);
+            modGain.gain.setValueAtTime(freq * 0.9, t0);
+            modGain.gain.exponentialRampToValueAtTime(1, t0 + Math.min(0.22, dur * 0.4));
+
+            gain.gain.setValueAtTime(0.0008, t0);
+            gain.gain.linearRampToValueAtTime(vol, t0 + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+
+            mod.connect(modGain);
+            modGain.connect(carrier.frequency);
+            carrier.connect(gain);
+            gain.connect(bgmBus);
+
+            if (reverbSend) {
+                const r = audioCtx.createGain(); r.gain.value = 0.65;
+                gain.connect(r); r.connect(reverbSend);
+            }
+            if (delaySend) {
+                const d = audioCtx.createGain(); d.gain.value = 0.40;
+                gain.connect(d); d.connect(delaySend);
+            }
+            carrier.start(t0); mod.start(t0);
+            carrier.stop(t0 + dur + 0.04); mod.stop(t0 + dur + 0.04);
+        }
+
+        // 3. 史诗铜管 / 弦乐主奏（带滤镜动态扫频，用于首领战与英雄战）
+        function playEpicLead(freq, t0, dur = 0.28, vol = 0.14, bright = 2400) {
+            if (!audioCtx || !bgmBus) return;
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
+            const gain = audioCtx.createGain();
+
+            osc1.type = 'sawtooth';
+            osc2.type = 'triangle';
+            osc1.frequency.setValueAtTime(freq, t0);
+            osc2.frequency.setValueAtTime(freq * 1.003, t0);
+
+            filter.type = 'lowpass';
+            filter.Q.value = 2.4;
+            filter.frequency.setValueAtTime(bright * 1.2, t0);
+            filter.frequency.exponentialRampToValueAtTime(Math.max(420, bright * 0.45), t0 + dur);
+
+            gain.gain.setValueAtTime(0.0008, t0);
+            gain.gain.linearRampToValueAtTime(vol, t0 + 0.018);
+            gain.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+
+            osc1.connect(filter); osc2.connect(filter);
+            filter.connect(gain);
+            gain.connect(bgmBus);
+            if (reverbSend) {
+                const r = audioCtx.createGain(); r.gain.value = 0.48;
+                gain.connect(r); r.connect(reverbSend);
+            }
+            osc1.start(t0); osc2.start(t0);
+            osc1.stop(t0 + dur + 0.04); osc2.stop(t0 + dur + 0.04);
+        }
+
+        // 4. 电影感打击乐（深沉定音鼓 / 战鼓 / 军鼓 / 踩镲）
+        function playCinematicDrum(kind, t0, vol = 0.25) {
+            if (!audioCtx || !bgmBus) return;
+            if (kind === 'kick') {
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(135, t0);
+                osc.frequency.exponentialRampToValueAtTime(38, t0 + 0.14);
+                g.gain.setValueAtTime(vol, t0);
+                g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+                osc.connect(g); g.connect(bgmBus);
+                osc.start(t0); osc.stop(t0 + 0.24);
+            } else if (kind === 'snare') {
+                const src = audioCtx.createBufferSource();
+                src.buffer = noiseBuffer;
+                const flt = audioCtx.createBiquadFilter();
+                flt.type = 'bandpass'; flt.frequency.setValueAtTime(1600, t0);
+                const g = audioCtx.createGain();
+                g.gain.setValueAtTime(vol * 0.75, t0);
+                g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.13);
+                src.connect(flt); flt.connect(g); g.connect(bgmBus);
+                if (reverbSend) { const r = audioCtx.createGain(); r.gain.value = 0.3; g.connect(r); r.connect(reverbSend); }
+                src.start(t0); src.stop(t0 + 0.15);
+            } else if (kind === 'hat') {
+                const src = audioCtx.createBufferSource();
+                src.buffer = noiseBuffer;
+                const flt = audioCtx.createBiquadFilter();
+                flt.type = 'highpass'; flt.frequency.setValueAtTime(6800, t0);
+                const g = audioCtx.createGain();
+                g.gain.setValueAtTime(vol * 0.35, t0);
+                g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.045);
+                src.connect(flt); flt.connect(g); g.connect(bgmBus);
+                src.start(t0); src.stop(t0 + 0.055);
+            }
+        }
+
+        // 获取当前游戏所处的音乐与视觉场景类型
+        function getCurrentSceneMood() {
+            const run = state.run;
+            if (!run) return 'home';
+            if (['village', 'town', 'sanctuary'].includes(run.phase)) return 'safe';
+            if (run.phase === 'battle' && run.battle) {
+                const alive = run.battle.monsters.filter(m => m.hp > 0 && !m.escaped);
+                if (alive.some(m => m.tier === '英雄')) return 'hero';
+                if (alive.some(m => m.tier === '首领' || m.tier === '终极首领')) return 'boss';
+                return 'battle';
+            }
+            if (run.floor >= 41) return 'void';
+            if (run.floor >= 31) return 'otherworld';
+            return 'explore';
+        }
+
+        // 高精度 Lookahead 交响乐调度器（零卡顿、7 场景自适应无缝过渡）
+        function scheduleBgmStep(step, t0) {
+            const mood = getCurrentSceneMood();
+            const bar = Math.floor(step / 16) % 4;
+            const beatInBar = step % 16;
+
+            if (mood === 'hero') {
+                // 【英雄终焉交响】D小调史诗进行：Dm - Bb - C - A
+                const chords = [
+                    [146.83, 220.00, 293.66, 349.23],
+                    [116.54, 174.61, 233.08, 293.66],
+                    [130.81, 196.00, 261.63, 329.63],
+                    [110.00, 164.81, 220.00, 277.18]
+                ];
+                const mel = [587.33, 0, 659.25, 698.46, 880.00, 0, 783.99, 698.46, 659.25, 0, 587.33, 523.25, 587.33, 659.25, 698.46, 880.00];
+                const arp = [293.66, 349.23, 440.00, 587.33, 440.00, 349.23, 293.66, 440.00];
+                if (beatInBar === 0) playOrchestraPad(chords[bar], t0, 2.3, 0.075, 1900);
+                if (beatInBar % 2 === 0) playCrystalHarp(arp[(beatInBar / 2) % 8] * (bar === 1 ? 0.89 : 1), t0, 0.38, 0.085);
+                if (mel[beatInBar] > 0) playEpicLead(mel[beatInBar], t0, 0.26, 0.13, 3200);
+                if (beatInBar % 4 === 0 || beatInBar === 10 || beatInBar === 14) playCinematicDrum('kick', t0, 0.34);
+                if (beatInBar === 4 || beatInBar === 12) playCinematicDrum('snare', t0, 0.22);
+                if (beatInBar % 2 === 1) playCinematicDrum('hat', t0, 0.16);
+            } else if (mood === 'boss') {
+                // 【首领激战】A小调摇滚管弦：Am - F - G - Em
+                const chords = [
+                    [110.00, 164.81, 220.00, 261.63],
+                    [87.31, 130.81, 174.61, 220.00],
+                    [98.00, 146.83, 196.00, 246.94],
+                    [82.41, 123.47, 164.81, 196.00]
+                ];
+                const mel = [440.00, 0, 523.25, 0, 659.25, 587.33, 523.25, 493.88, 440.00, 0, 392.00, 440.00, 523.25, 0, 493.88, 0];
+                if (beatInBar === 0) playOrchestraPad(chords[bar], t0, 2.4, 0.07, 1500);
+                if (mel[beatInBar] > 0) playEpicLead(mel[beatInBar], t0, 0.25, 0.12, 2600);
+                if (beatInBar % 4 === 0) playCinematicDrum('kick', t0, 0.30);
+                if (beatInBar === 4 || beatInBar === 12) playCinematicDrum('snare', t0, 0.18);
+                if (beatInBar % 2 === 0) playCinematicDrum('hat', t0, 0.13);
+            } else if (mood === 'battle') {
+                // 【普通战斗】紧凑冒险律动：Em - C - D - Bm
+                const chords = [
+                    [164.81, 196.00, 246.94],
+                    [130.81, 164.81, 196.00],
+                    [146.83, 185.00, 220.00],
+                    [123.47, 146.83, 185.00]
+                ];
+                const mel = [329.63, 0, 392.00, 0, 493.88, 0, 440.00, 392.00, 329.63, 0, 293.66, 0, 329.63, 392.00, 440.00, 0];
+                if (beatInBar === 0) playOrchestraPad(chords[bar], t0, 2.5, 0.055, 1200);
+                if (mel[beatInBar] > 0) playEpicLead(mel[beatInBar], t0, 0.22, 0.095, 2000);
+                if (beatInBar === 0 || beatInBar === 8 || beatInBar === 10) playCinematicDrum('kick', t0, 0.24);
+                if (beatInBar === 4 || beatInBar === 12) playCinematicDrum('snare', t0, 0.13);
+            } else if (mood === 'safe') {
+                // 【村庄/城镇/圣地】温暖治愈凯尔特竖琴：C - G - Am - F
+                const chords = [
+                    [130.81, 196.00, 261.63, 329.63],
+                    [98.00, 146.83, 196.00, 246.94],
+                    [110.00, 164.81, 220.00, 261.63],
+                    [87.31, 130.81, 174.61, 220.00]
+                ];
+                const harpSeq = [523.25, 0, 659.25, 0, 783.99, 0, 659.25, 587.33, 523.25, 0, 440.00, 0, 392.00, 0, 440.00, 0];
+                if (beatInBar === 0) playOrchestraPad(chords[bar], t0, 3.0, 0.05, 850);
+                if (harpSeq[beatInBar] > 0) playCrystalHarp(harpSeq[beatInBar], t0, 0.95, 0.11);
+            } else if (mood === 'void' || mood === 'otherworld') {
+                // 【异界/末地探索】深邃空灵虚空音阶
+                const chords = [
+                    [110.00, 155.56, 220.00],
+                    [98.00, 146.83, 207.65],
+                    [123.47, 174.61, 246.94],
+                    [110.00, 164.81, 220.00]
+                ];
+                const notes = [440.00, 0, 0, 523.25, 0, 622.25, 0, 0, 587.33, 0, 440.00, 0, 392.00, 0, 0, 0];
+                if (beatInBar === 0) playOrchestraPad(chords[bar], t0, 3.1, 0.06, 780);
+                if (notes[beatInBar] > 0) playCrystalHarp(notes[beatInBar], t0, 1.25, 0.105);
+            } else {
+                // 【首页 / 道路探索】宁静奇幻星空主题：Am9 - Fmaj7 - Cmaj7 - G6
+                const chords = [
+                    [110.00, 164.81, 246.94, 261.63],
+                    [87.31, 130.81, 174.61, 220.00],
+                    [130.81, 196.00, 246.94, 329.63],
+                    [98.00, 146.83, 196.00, 293.66]
+                ];
+                const starMel = [523.25, 0, 0, 493.88, 0, 392.00, 0, 440.00, 523.25, 0, 659.25, 0, 587.33, 0, 493.88, 0];
+                if (beatInBar === 0) playOrchestraPad(chords[bar], t0, 3.0, 0.055, 920);
+                if (starMel[beatInBar] > 0) playCrystalHarp(starMel[beatInBar], t0, 1.05, 0.115);
+            }
+        }
+
+        function startBgmLoop() {
+            if (bgmSchedulerTimer) return;
+            bgmNextNoteTime = audioCtx.currentTime + 0.08;
+            bgmSchedulerTimer = setInterval(() => {
+                if (!audioCtx || audioCtx.state !== 'running') return;
+                if (!state.settings.bgm || document.hidden) {
+                    bgmNextNoteTime = audioCtx.currentTime + 0.1;
+                    return;
+                }
+                const mood = getCurrentSceneMood();
+                // 不同场景动态调整 BPM（首页舒缓 ~98 BPM，战斗 ~126 BPM，英雄战高燃 ~148 BPM）
+                const stepDur = mood === 'hero' ? 0.102 : (mood === 'boss' ? 0.115 : (mood === 'battle' ? 0.125 : 0.158));
+                while (bgmNextNoteTime < audioCtx.currentTime + 0.18) {
+                    scheduleBgmStep(bgmStep, bgmNextNoteTime);
+                    bgmNextNoteTime += stepDur;
+                    bgmStep = (bgmStep + 1) % 64;
+                }
+            }, 40);
         }
 
         function playClickSfx() {
             try {
                 ensureAudio();
                 if (!state.settings.sfx) return;
-                playTone(920, 520, 'triangle', 0.06, 0.28, 0);
+                playTone(980, 560, 'triangle', 0.055, 0.22, 0, 0.12);
             } catch (e) {}
         }
 
-        // 精细化单技能/单动作专属音效合成器
         function playSignatureSfx(key, extraCount = 1) {
             try {
                 ensureAudio();
@@ -2718,135 +3187,137 @@
 
                 switch (key) {
                     case 'slash_single':
-                        playNoise(0.09, 0.35, 2200, 'bandpass', 0);
-                        playTone(760, 140, 'sawtooth', 0.11, 0.38, 0);
+                        playNoise(0.09, 0.30, 2400, 'bandpass', 0);
+                        playTone(760, 140, 'sawtooth', 0.11, 0.34, 0, 0.18);
                         break;
                     case 'sword_chime':
-                        playNoise(0.07, 0.24, 3400, 'highpass', 0);
-                        playTone(1320 + Math.random() * 480, 620, 'triangle', 0.10, 0.30, 0);
-                        playTone(2200 + Math.random() * 400, 1100, 'sine', 0.08, 0.18, 0.01);
+                        playNoise(0.06, 0.22, 3600, 'highpass', 0);
+                        playTone(1380 + Math.random() * 440, 640, 'triangle', 0.11, 0.26, 0, 0.35);
+                        playTone(2280 + Math.random() * 380, 1180, 'sine', 0.09, 0.16, 0.01, 0.40);
                         break;
                     case 'shadow_slice':
-                        playNoise(0.08, 0.28, 1600, 'bandpass', 0);
-                        playTone(420 + Math.random() * 240, 95, 'sawtooth', 0.09, 0.32, 0);
-                        playTone(980, 280, 'sine', 0.07, 0.16, 0.01);
+                        playNoise(0.08, 0.25, 1700, 'bandpass', 0);
+                        playTone(440 + Math.random() * 240, 95, 'sawtooth', 0.09, 0.28, 0, 0.25);
+                        playTone(980, 280, 'sine', 0.08, 0.15, 0.01, 0.32);
                         break;
                     case 'axe_chop':
-                        playNoise(0.11, 0.40, 700, 'lowpass', 0);
-                        playTone(320, 62, 'sawtooth', 0.14, 0.48, 0);
-                        playTone(140, 40, 'square', 0.13, 0.38, 0.01);
+                        playNoise(0.12, 0.38, 680, 'lowpass', 0);
+                        playTone(300, 58, 'sawtooth', 0.15, 0.44, 0, 0.20);
+                        playTone(135, 38, 'square', 0.14, 0.34, 0.01, 0.15);
                         break;
                     case 'punch_heavy':
-                        playNoise(0.14, 0.48, 420, 'lowpass', 0);
-                        playTone(190, 38, 'sine', 0.20, 0.65, 0);
-                        playTone(120, 32, 'triangle', 0.18, 0.50, 0.01);
+                        playNoise(0.15, 0.45, 400, 'lowpass', 0);
+                        playTone(185, 36, 'sine', 0.22, 0.62, 0, 0.22);
+                        playTone(115, 30, 'triangle', 0.18, 0.46, 0.01, 0.20);
                         break;
                     case 'arrow_shot':
-                        playTone(340, 980, 'triangle', 0.06, 0.26, 0);
-                        playNoise(0.07, 0.32, 3200, 'bandpass', 0.03);
-                        playTone(620, 180, 'sawtooth', 0.08, 0.24, 0.04);
+                        playTone(360, 1020, 'triangle', 0.06, 0.24, 0, 0.15);
+                        playNoise(0.07, 0.28, 3400, 'bandpass', 0.03);
+                        playTone(640, 190, 'sawtooth', 0.08, 0.22, 0.04, 0.15);
                         break;
                     case 'cannon_shot':
-                        playTone(150, 520, 'sawtooth', 0.12, 0.34, 0);
-                        playNoise(0.26, 0.55, 500, 'lowpass', 0.08);
-                        playTone(260, 36, 'square', 0.28, 0.58, 0.08);
+                        playTone(150, 540, 'sawtooth', 0.12, 0.32, 0, 0.25);
+                        playNoise(0.28, 0.50, 480, 'lowpass', 0.08);
+                        playTone(240, 34, 'square', 0.30, 0.54, 0.08, 0.30);
                         break;
                     case 'dimension_slash':
-                        // 空间斩：尖锐玻璃裂隙声 + 低音空间坍缩
-                        playTone(2400, 620, 'sine', 0.14, 0.38, 0);
-                        playNoise(0.16, 0.42, 4200, 'highpass', 0.02);
-                        playTone(180, 32, 'sawtooth', 0.34, 0.55, 0.10);
-                        playNoise(0.24, 0.45, 380, 'lowpass', 0.12);
+                        playTone(2500, 620, 'sine', 0.15, 0.34, 0, 0.45);
+                        playNoise(0.16, 0.38, 4200, 'highpass', 0.02);
+                        playTone(175, 32, 'sawtooth', 0.36, 0.52, 0.10, 0.40);
+                        playNoise(0.25, 0.42, 360, 'lowpass', 0.12);
                         break;
                     case 'arcane_beam':
                         [440, 659.25, 880, 1318.5].forEach((f, idx) => {
-                            playTone(f, f * 1.15, 'sine', 0.22, 0.26, s(idx * 0.035));
+                            playTone(f, f * 1.15, 'sine', 0.24, 0.24, s(idx * 0.035), 0.45);
                         });
-                        playNoise(0.25, 0.30, 1800, 'bandpass', 0.05);
-                        playTone(220, 90, 'sawtooth', 0.28, 0.36, 0.08);
+                        playNoise(0.25, 0.28, 1900, 'bandpass', 0.05);
+                        playTone(220, 90, 'sawtooth', 0.28, 0.32, 0.08, 0.35);
                         break;
                     case 'magic_bolt':
-                        playTone(880 + Math.random() * 360, 420, 'sine', 0.11, 0.28, 0);
-                        playTone(1320 + Math.random() * 240, 660, 'triangle', 0.09, 0.20, 0.01);
+                        playTone(900 + Math.random() * 340, 430, 'sine', 0.12, 0.26, 0, 0.38);
+                        playTone(1350 + Math.random() * 240, 680, 'triangle', 0.09, 0.18, 0.01, 0.35);
                         break;
                     case 'qigong_blast':
-                        playTone(220, 680, 'sine', 0.16, 0.38, 0);
-                        playNoise(0.22, 0.38, 950, 'bandpass', 0.08);
-                        playTone(540, 110, 'triangle', 0.24, 0.46, 0.10);
+                        playTone(220, 700, 'sine', 0.16, 0.35, 0, 0.32);
+                        playNoise(0.22, 0.34, 960, 'bandpass', 0.08);
+                        playTone(540, 110, 'triangle', 0.25, 0.42, 0.10, 0.35);
                         break;
                     case 'poison_splash':
-                        playNoise(0.24, 0.36, 2600, 'bandpass', 0);
-                        playTone(390, 170, 'sawtooth', 0.18, 0.28, 0);
-                        playTone(310, 130, 'triangle', 0.20, 0.26, 0.06);
+                        playNoise(0.24, 0.32, 2600, 'bandpass', 0);
+                        playTone(390, 170, 'sawtooth', 0.18, 0.25, 0, 0.28);
+                        playTone(310, 130, 'triangle', 0.20, 0.24, 0.06, 0.28);
                         break;
                     case 'bite_chomp':
-                        playNoise(0.09, 0.45, 1100, 'bandpass', 0);
-                        playTone(360, 85, 'sawtooth', 0.11, 0.48, 0);
-                        playTone(280, 70, 'square', 0.10, 0.40, 0.06);
+                        playNoise(0.09, 0.40, 1100, 'bandpass', 0);
+                        playTone(360, 85, 'sawtooth', 0.11, 0.44, 0, 0.18);
+                        playTone(280, 70, 'square', 0.10, 0.36, 0.06, 0.15);
                         break;
                     case 'chain_rattle':
                         for (let i = 0; i < 4; i++) {
-                            playTone(1100 + i * 240, 820, 'square', 0.05, 0.22, s(i * 0.045));
-                            playNoise(0.04, 0.22, 3600, 'highpass', s(i * 0.045));
+                            playTone(1120 + i * 240, 840, 'square', 0.05, 0.20, s(i * 0.045), 0.28);
+                            playNoise(0.04, 0.20, 3600, 'highpass', s(i * 0.045));
                         }
                         break;
                     case 'ghost_wail':
-                        playTone(680, 290, 'sine', 0.30, 0.36, 0);
-                        playTone(720, 310, 'triangle', 0.32, 0.26, 0.04);
-                        playNoise(0.26, 0.22, 1400, 'bandpass', 0.02);
+                        playTone(680, 290, 'sine', 0.34, 0.32, 0, 0.55);
+                        playTone(720, 310, 'triangle', 0.36, 0.24, 0.04, 0.55);
+                        playNoise(0.26, 0.20, 1400, 'bandpass', 0.02);
                         break;
                     case 'sonic_wave':
-                        playTone(520, 1240, 'sine', 0.18, 0.34, 0);
-                        playTone(1240, 320, 'sine', 0.24, 0.34, 0.14);
-                        playTone(260, 620, 'triangle', 0.20, 0.24, 0.06);
+                        playTone(520, 1240, 'sine', 0.18, 0.30, 0, 0.45);
+                        playTone(1240, 320, 'sine', 0.26, 0.30, 0.14, 0.45);
+                        playTone(260, 620, 'triangle', 0.20, 0.22, 0.06, 0.35);
                         break;
                     case 'doomsday_laser':
-                        // 终焉 / 世界意识 终极毁灭音效
-                        playTone(95, 42, 'sawtooth', 0.55, 0.55, 0);
-                        playTone(190, 580, 'sawtooth', 0.28, 0.40, 0);
-                        playNoise(0.45, 0.52, 650, 'lowpass', 0.15);
-                        playTone(880, 110, 'square', 0.42, 0.45, 0.18);
+                        playTone(95, 42, 'sawtooth', 0.58, 0.50, 0, 0.42);
+                        playTone(190, 580, 'sawtooth', 0.28, 0.36, 0, 0.38);
+                        playNoise(0.45, 0.48, 650, 'lowpass', 0.15);
+                        playTone(880, 110, 'square', 0.42, 0.40, 0.18, 0.45);
                         break;
                     case 'all_methods_cosmic':
-                        // 万法天尊【万法】史诗级万法齐鸣和弦
                         [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((f, idx) => {
-                            playTone(f, f * 1.04, 'triangle', 0.38, 0.24, s(idx * 0.05));
-                            playTone(f * 0.5, f, 'sine', 0.34, 0.18, s(idx * 0.05));
+                            playTone(f, f * 1.04, 'triangle', 0.42, 0.22, s(idx * 0.05), 0.60);
+                            playTone(f * 0.5, f, 'sine', 0.36, 0.16, s(idx * 0.05), 0.55);
                         });
-                        playNoise(0.35, 0.32, 1600, 'bandpass', 0.12);
+                        playNoise(0.35, 0.30, 1600, 'bandpass', 0.12);
                         break;
                     case 'coin_steal':
-                        playTone(1568, 2093, 'sine', 0.08, 0.32, 0);
-                        playTone(2093, 2637, 'sine', 0.10, 0.32, 0.06);
-                        playTone(1318, 1760, 'triangle', 0.08, 0.22, 0.11);
+                        playTone(1568, 2093, 'sine', 0.09, 0.28, 0, 0.35);
+                        playTone(2093, 2637, 'sine', 0.11, 0.28, 0.06, 0.35);
+                        playTone(1318, 1760, 'triangle', 0.09, 0.20, 0.11, 0.30);
                         break;
                     case 'shield_up':
-                        playTone(392, 587.33, 'triangle', 0.16, 0.38, 0);
-                        playTone(783.99, 1174.66, 'sine', 0.22, 0.30, 0.06);
+                        playTone(392, 587.33, 'triangle', 0.18, 0.32, 0, 0.45);
+                        playTone(783.99, 1174.66, 'sine', 0.24, 0.26, 0.06, 0.50);
                         break;
                     case 'heal_chime':
                         [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
-                            playTone(f, f * 1.02, 'sine', 0.22, 0.30, i * 0.055);
+                            playTone(f, f * 1.02, 'sine', 0.26, 0.26, i * 0.055, 0.55);
                         });
                         break;
                     case 'buff_power':
-                        playTone(220, 440, 'sawtooth', 0.18, 0.30, 0);
-                        playTone(330, 660, 'triangle', 0.22, 0.32, 0.05);
-                        playTone(440, 880, 'sine', 0.24, 0.26, 0.10);
+                        playTone(220, 440, 'sawtooth', 0.18, 0.26, 0, 0.35);
+                        playTone(330, 660, 'triangle', 0.22, 0.28, 0.05, 0.40);
+                        playTone(440, 880, 'sine', 0.26, 0.24, 0.10, 0.45);
                         break;
                     case 'summon_portal':
                         [293.66, 369.99, 440.00, 587.33].forEach((f, i) => {
-                            playTone(f, f * 1.25, 'triangle', 0.22, 0.28, i * 0.06);
+                            playTone(f, f * 1.25, 'triangle', 0.24, 0.25, i * 0.06, 0.52);
                         });
-                        playNoise(0.24, 0.22, 900, 'bandpass', 0.04);
+                        playNoise(0.24, 0.20, 900, 'bandpass', 0.04);
                         break;
                     case 'stealth_vanish':
-                        playNoise(0.20, 0.28, 2800, 'highpass', 0);
-                        playTone(540, 180, 'sine', 0.20, 0.24, 0);
+                        playNoise(0.20, 0.24, 2800, 'highpass', 0);
+                        playTone(540, 180, 'sine', 0.22, 0.22, 0, 0.40);
                         break;
                     case 'taunt_roar':
-                        playTone(165, 88, 'sawtooth', 0.28, 0.45, 0);
-                        playNoise(0.25, 0.35, 600, 'lowpass', 0.02);
+                        playTone(165, 88, 'sawtooth', 0.30, 0.42, 0, 0.35);
+                        playNoise(0.25, 0.32, 600, 'lowpass', 0.02);
+                        break;
+                    case 'boss_warning':
+                        playTone(110, 82.41, 'sawtooth', 0.55, 0.38, 0, 0.55);
+                        playTone(220, 164.81, 'triangle', 0.55, 0.30, 0.05, 0.55);
+                        playNoise(0.35, 0.28, 500, 'lowpass', 0.04);
                         break;
                     default:
                         playBattleSfx(key, extraCount);
@@ -2865,8 +3336,8 @@
                     const hits = Math.min(10, Math.max(2, comboCount || 3));
                     for (let i = 0; i < hits; i++) {
                         const baseF = 540 + (i % 5) * 130;
-                        playTone(baseF, baseF * 0.3, 'sawtooth', 0.07, 0.34, i * 0.055);
-                        playNoise(0.05, 0.22, 2400, 'bandpass', i * 0.055);
+                        playTone(baseF, baseF * 0.3, 'sawtooth', 0.07, 0.30, i * 0.055, 0.24);
+                        playNoise(0.05, 0.20, 2400, 'bandpass', i * 0.055);
                     }
                 } else if (type === 'heavy_skill') {
                     playSignatureSfx('cannon_shot');
@@ -2877,31 +3348,31 @@
                 } else if (type === 'buff_heal') {
                     playSignatureSfx('heal_chime');
                 } else if (type === 'counter') {
-                    playTone(1480, 960, 'triangle', 0.08, 0.44, 0);
-                    playNoise(0.08, 0.32, 3200, 'highpass', 0.02);
-                    playTone(880, 160, 'sawtooth', 0.15, 0.48, 0.05);
+                    playTone(1480, 960, 'triangle', 0.08, 0.40, 0, 0.35);
+                    playNoise(0.08, 0.28, 3200, 'highpass', 0.02);
+                    playTone(880, 160, 'sawtooth', 0.15, 0.42, 0.05, 0.28);
                 } else if (type === 'def') {
                     playSignatureSfx('shield_up');
                 } else if (type === 'skill') {
                     playSignatureSfx('buff_power');
                 } else if (type === 'levelup') {
                     [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((f, i) => {
-                        playTone(f, f, 'triangle', 0.18, 0.36, i * 0.08);
-                        playTone(f * 0.5, f * 0.5, 'sine', 0.18, 0.24, i * 0.08);
+                        playTone(f, f, 'triangle', 0.22, 0.32, i * 0.08, 0.55);
+                        playTone(f * 0.5, f * 0.5, 'sine', 0.22, 0.22, i * 0.08, 0.50);
                     });
                 } else if (type === 'win') {
                     const notes = [
-                        { f: 523.25, d: 0.10, t: 0.00 },
-                        { f: 523.25, d: 0.10, t: 0.11 },
-                        { f: 523.25, d: 0.10, t: 0.22 },
-                        { f: 659.25, d: 0.22, t: 0.34 },
-                        { f: 587.33, d: 0.14, t: 0.58 },
-                        { f: 659.25, d: 0.14, t: 0.74 },
-                        { f: 783.99, d: 0.42, t: 0.90 }
+                        { f: 523.25, d: 0.11, t: 0.00 },
+                        { f: 523.25, d: 0.11, t: 0.11 },
+                        { f: 523.25, d: 0.11, t: 0.22 },
+                        { f: 659.25, d: 0.24, t: 0.34 },
+                        { f: 587.33, d: 0.15, t: 0.58 },
+                        { f: 659.25, d: 0.15, t: 0.74 },
+                        { f: 783.99, d: 0.48, t: 0.90 }
                     ];
                     notes.forEach(n => {
-                        playTone(n.f, n.f, 'triangle', n.d, 0.38, n.t);
-                        playTone(n.f * 0.5, n.f * 0.5, 'sine', n.d, 0.28, n.t);
+                        playTone(n.f, n.f, 'triangle', n.d, 0.34, n.t, 0.55);
+                        playTone(n.f * 0.5, n.f * 0.5, 'sine', n.d, 0.24, n.t, 0.50);
                     });
                 }
             } catch (e) {}
@@ -2912,7 +3383,240 @@
             return new Promise(resolve => setTimeout(resolve, Math.max(20, Math.round(ms / spdMult))));
         }
 
-        // ================= 全局坐标 VFX 特效渲染引擎 =================
+        // ================= 60fps 双 Canvas 极限视觉引擎（动态星空极光 + 物理火花剑弧） =================
+        const vfxParticles = [];
+        const vfxArcs = [];
+        let visualEngineStarted = false;
+
+        function startAmbientVisualEngine() {
+            if (visualEngineStarted) return;
+            visualEngineStarted = true;
+
+            const bgCanvas = document.getElementById('ambient-bg-canvas');
+            const fxCanvas = document.getElementById('vfx-canvas');
+            if (!bgCanvas || !fxCanvas) return;
+            const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+            const fxCtx = fxCanvas.getContext('2d');
+
+            const stars = Array.from({ length: 42 }, () => ({
+                x: Math.random(), y: Math.random() * 0.78,
+                r: 0.7 + Math.random() * 1.4,
+                phase: Math.random() * Math.PI * 2,
+                spd: 0.03 + Math.random() * 0.04
+            }));
+
+            const floaters = Array.from({ length: 18 }, () => ({
+                x: Math.random(), y: Math.random(),
+                vy: -(0.0008 + Math.random() * 0.0018),
+                vx: (Math.random() - 0.5) * 0.0008,
+                r: 1.2 + Math.random() * 2.0,
+                alpha: 0.28 + Math.random() * 0.55
+            }));
+
+            let shootingStar = null;
+            let frame = 0;
+
+            function resizeCanvases() {
+                const root = document.getElementById('app-root');
+                // 底层氛围画布用 1x 分辨率即可呈现细腻极光星空，像素计算量直接减少 75%
+                if (root) {
+                    const rr = root.getBoundingClientRect();
+                    bgCanvas.width = Math.max(1, Math.floor(rr.width));
+                    bgCanvas.height = Math.max(1, Math.floor(rr.height));
+                }
+                fxCanvas.width = Math.max(1, Math.floor(window.innerWidth));
+                fxCanvas.height = Math.max(1, Math.floor(window.innerHeight));
+            }
+            resizeCanvases();
+            window.addEventListener('resize', resizeCanvases);
+
+            const moodPalette = {
+                home:       { top: '#0b1026', mid: '#1a1b4b', bot: '#090d16', aurora1: 'rgba(99,102,241,0.22)', aurora2: 'rgba(168,85,247,0.18)', floater: '#93c5fd' },
+                explore:    { top: '#081420', mid: '#0f293a', bot: '#080c14', aurora1: 'rgba(16,185,129,0.16)', aurora2: 'rgba(56,189,248,0.16)', floater: '#6ee7b7' },
+                safe:       { top: '#171226', mid: '#31203d', bot: '#0c0d16', aurora1: 'rgba(251,191,36,0.18)', aurora2: 'rgba(245,158,11,0.12)', floater: '#fde68a' },
+                otherworld: { top: '#120826', mid: '#2e1065', bot: '#090714', aurora1: 'rgba(192,132,252,0.24)', aurora2: 'rgba(56,189,248,0.20)', floater: '#d8b4fe' },
+                void:       { top: '#090414', mid: '#1e0b36', bot: '#05040a', aurora1: 'rgba(139,92,246,0.24)', aurora2: 'rgba(236,72,153,0.16)', floater: '#c084fc' },
+                battle:     { top: '#140c1c', mid: '#2a1224', bot: '#0b0c14', aurora1: 'rgba(244,63,94,0.16)', aurora2: 'rgba(245,158,11,0.14)', floater: '#fda4af' },
+                boss:       { top: '#1f0812', mid: '#450a1a', bot: '#0a0810', aurora1: 'rgba(239,68,68,0.24)', aurora2: 'rgba(245,158,11,0.20)', floater: '#fbbf24' },
+                hero:       { top: '#1b0624', mid: '#581c3a', bot: '#09040e', aurora1: 'rgba(244,63,94,0.28)', aurora2: 'rgba(168,85,247,0.26)', floater: '#f472b6' }
+            };
+
+            let fxWasActive = false;
+
+            function renderFrame() {
+                requestAnimationFrame(renderFrame);
+                if (document.hidden) return;
+                frame += 1;
+
+                // --- 1. 底层背景采用 30fps（每 2 帧画 1 次），视觉依然丝滑但功耗减半 ---
+                if (frame % 2 === 0) {
+                    const w = bgCanvas.width;
+                    const h = bgCanvas.height;
+                    const mood = getCurrentSceneMood();
+                    const pal = moodPalette[mood] || moodPalette.home;
+
+                    const grad = bgCtx.createLinearGradient(0, 0, 0, h);
+                    grad.addColorStop(0, pal.top);
+                    grad.addColorStop(0.55, pal.mid);
+                    grad.addColorStop(1, pal.bot);
+                    bgCtx.fillStyle = grad;
+                    bgCtx.fillRect(0, 0, w, h);
+
+                    const t = frame * 0.012;
+                    const a1 = bgCtx.createRadialGradient(w * (0.3 + Math.sin(t) * 0.2), h * 0.22, 10, w * 0.35, h * 0.25, w * 0.78);
+                    a1.addColorStop(0, pal.aurora1);
+                    a1.addColorStop(1, 'transparent');
+                    bgCtx.fillStyle = a1;
+                    bgCtx.fillRect(0, 0, w, h);
+
+                    const a2 = bgCtx.createRadialGradient(w * (0.7 + Math.cos(t * 0.8) * 0.2), h * 0.42, 10, w * 0.65, h * 0.42, w * 0.72);
+                    a2.addColorStop(0, pal.aurora2);
+                    a2.addColorStop(1, 'transparent');
+                    bgCtx.fillStyle = a2;
+                    bgCtx.fillRect(0, 0, w, h);
+
+                    stars.forEach(s => {
+                        s.phase += s.spd;
+                        const alpha = 0.22 + (Math.sin(s.phase) * 0.5 + 0.5) * 0.72;
+                        bgCtx.fillStyle = `rgba(226, 232, 240, ${alpha.toFixed(2)})`;
+                        bgCtx.fillRect(s.x * w, s.y * h, s.r * 1.4, s.r * 1.4);
+                    });
+
+                    if (!shootingStar && (mood === 'home' || mood === 'explore' || mood === 'safe') && Math.random() < 0.015) {
+                        shootingStar = { x: w * (0.25 + Math.random() * 0.7), y: h * (0.05 + Math.random() * 0.25), vx: -9.5, vy: 4.5, life: 18 };
+                    }
+                    if (shootingStar) {
+                        const st = shootingStar;
+                        bgCtx.strokeStyle = 'rgba(224, 242, 254, 0.85)';
+                        bgCtx.lineWidth = 1.6;
+                        bgCtx.beginPath();
+                        bgCtx.moveTo(st.x, st.y);
+                        bgCtx.lineTo(st.x - st.vx * 5, st.y - st.vy * 5);
+                        bgCtx.stroke();
+                        st.x += st.vx; st.y += st.vy; st.life -= 1;
+                        if (st.life <= 0) shootingStar = null;
+                    }
+
+                    if (mood === 'home' || mood === 'explore' || mood === 'safe') {
+                        bgCtx.fillStyle = 'rgba(9, 13, 28, 0.45)';
+                        bgCtx.beginPath();
+                        bgCtx.moveTo(0, h);
+                        bgCtx.lineTo(0, h * 0.78);
+                        bgCtx.quadraticCurveTo(w * 0.22, h * 0.66, w * 0.48, h * 0.76);
+                        bgCtx.quadraticCurveTo(w * 0.76, h * 0.64, w, h * 0.75);
+                        bgCtx.lineTo(w, h);
+                        bgCtx.closePath();
+                        bgCtx.fill();
+                    }
+
+                    const speedBoost = (mood === 'boss' || mood === 'hero') ? 2.2 : (mood === 'battle' ? 1.4 : 1.0);
+                    bgCtx.fillStyle = pal.floater;
+                    floaters.forEach(fl => {
+                        fl.y += fl.vy * speedBoost;
+                        fl.x += fl.vx;
+                        if (fl.y < -0.05) { fl.y = 1.05; fl.x = Math.random(); }
+                        if (fl.x < -0.05) fl.x = 1.05;
+                        if (fl.x > 1.05) fl.x = -0.05;
+                        bgCtx.globalAlpha = fl.alpha;
+                        bgCtx.beginPath();
+                        bgCtx.arc(fl.x * w, fl.y * h, fl.r, 0, Math.PI * 2);
+                        bgCtx.fill();
+                    });
+                    bgCtx.globalAlpha = 1;
+                }
+
+                // --- 2. 顶层物理火花与剑弧（去掉极度耗电的 shadowBlur，改用纯 GPU 叠加发光） ---
+                if (vfxParticles.length > 0 || vfxArcs.length > 0) {
+                    fxWasActive = true;
+                    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+                    fxCtx.save();
+                    fxCtx.globalCompositeOperation = 'lighter';
+
+                    for (let i = vfxArcs.length - 1; i >= 0; i--) {
+                        const a = vfxArcs[i];
+                        a.age += 1;
+                        const p = a.age / a.life;
+                        if (p >= 1) { vfxArcs.splice(i, 1); continue; }
+                        const alpha = Math.sin((1 - p) * Math.PI * 0.85);
+                        fxCtx.save();
+                        fxCtx.translate(a.cx, a.cy);
+                        fxCtx.rotate(a.rot);
+                        fxCtx.lineCap = 'round';
+                        // 外层光晕（用低透明度宽弧替代高耗能 shadowBlur）
+                        fxCtx.strokeStyle = a.color;
+                        fxCtx.globalAlpha = Math.max(0, alpha * 0.35);
+                        fxCtx.lineWidth = a.width * 2.2 * (1 - p * 0.6);
+                        fxCtx.beginPath();
+                        fxCtx.arc(0, 0, a.radius * (0.85 + p * 0.35), -a.span * 0.5, a.span * 0.5);
+                        fxCtx.stroke();
+                        // 内层高亮剑心
+                        fxCtx.strokeStyle = '#ffffff';
+                        fxCtx.globalAlpha = Math.max(0, alpha * 0.92);
+                        fxCtx.lineWidth = Math.max(1.5, a.width * 0.6 * (1 - p * 0.65));
+                        fxCtx.stroke();
+                        fxCtx.restore();
+                    }
+
+                    for (let i = vfxParticles.length - 1; i >= 0; i--) {
+                        const pt = vfxParticles[i];
+                        pt.age += 1;
+                        if (pt.age >= pt.life) { vfxParticles.splice(i, 1); continue; }
+                        pt.px = pt.x; pt.py = pt.y;
+                        pt.x += pt.vx; pt.y += pt.vy;
+                        pt.vx *= 0.93; pt.vy = pt.vy * 0.93 + pt.grav;
+                        const alpha = 1 - pt.age / pt.life;
+
+                        fxCtx.strokeStyle = pt.color;
+                        fxCtx.globalAlpha = alpha;
+                        fxCtx.lineWidth = Math.max(1, pt.size * alpha);
+                        fxCtx.lineCap = 'round';
+                        fxCtx.beginPath();
+                        fxCtx.moveTo(pt.px, pt.py);
+                        fxCtx.lineTo(pt.x, pt.y);
+                        fxCtx.stroke();
+                    }
+                    fxCtx.restore();
+                } else if (fxWasActive) {
+                    fxWasActive = false;
+                    fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+                }
+            }
+            requestAnimationFrame(renderFrame);
+        }
+
+        // 电影级【首领 / 英雄降临】全屏横幅演出
+        function triggerBossIntroBanner(monsters) {
+            if (!Array.isArray(monsters) || monsters.length === 0) return;
+            const hero = monsters.find(m => m.tier === '英雄');
+            const boss = hero || monsters.find(m => m.tier === '首领' || m.tier === '终极首领');
+            if (!boss || boss.id === 'damage_dummy' || boss.id === 'survival_dummy') return;
+
+            const box = document.getElementById('boss-banner-overlay');
+            if (!box) return;
+            playSignatureSfx('boss_warning');
+            const isHero = boss.tier === '英雄';
+            box.innerHTML = `
+                <div class="boss-intro-banner w-full max-w-md px-5 py-3.5 rounded-2xl border-2 text-center shadow-2xl ${
+                    isHero
+                        ? 'bg-gradient-to-r from-purple-950/95 via-rose-950/95 to-purple-950/95 border-rose-400 shadow-rose-500/40'
+                        : 'bg-gradient-to-r from-slate-950/95 via-amber-950/95 to-slate-950/95 border-amber-400 shadow-amber-500/35'
+                }">
+                    <div class="text-[10px] font-black tracking-[0.28em] uppercase ${isHero ? 'text-rose-300' : 'text-amber-300'}">
+                        ${isHero ? '⚠️ HEROIC ENTITY DETECTED · 英雄降临 ⚠️' : '👑 BOSS ENCOUNTER · 首领决战 👑'}
+                    </div>
+                    <div class="text-lg font-black mt-1 ${isHero ? 'ach-rainbow' : 'text-amber-300'}">
+                        ${boss.name} Lv.${boss.level}
+                    </div>
+                </div>
+            `;
+            box.classList.remove('hidden');
+            setTimeout(() => {
+                box.classList.add('hidden');
+                box.innerHTML = '';
+            }, 1800);
+        }
+
+        // ================= 坐标与特效桥接函数（无缝驱动 Canvas 物理火花 + DOM 飘字） =================
         function getElementCenterRect(elId) {
             const el = document.getElementById(elId);
             if (!el) return null;
@@ -2939,20 +3643,32 @@
             setTimeout(() => { if (el.parentNode) el.remove(); }, lifeMs);
         }
 
-        function spawnParticlesBurst(cx, cy, color, count = 8, spread = 60) {
+        // 升级为 60fps Canvas 物理拖尾火花喷射
+        function spawnParticlesBurst(cx, cy, color, count = 14, spread = 75) {
             for (let i = 0; i < count; i++) {
-                const ang = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
-                const dist = spread * (0.45 + Math.random() * 0.75);
-                const dx = Math.round(Math.cos(ang) * dist);
-                const dy = Math.round(Math.sin(ang) * dist);
-                spawnVfxElement('vfx-particle', {
-                    left: `${cx}px`, top: `${cy}px`,
-                    '--c1': color,
-                    '--sz': `${6 + Math.round(Math.random() * 6)}px`,
-                    '--dx': `${dx}px`, '--dy': `${dy}px`,
-                    '--dur': `${0.32 + Math.random() * 0.22}s`
-                }, '', 580);
+                const ang = Math.random() * Math.PI * 2;
+                const spd = (spread / 14) * (0.4 + Math.random() * 0.95);
+                vfxParticles.push({
+                    x: cx, y: cy, px: cx, py: cy,
+                    vx: Math.cos(ang) * spd,
+                    vy: Math.sin(ang) * spd - 1.2,
+                    grav: 0.18,
+                    size: 2.2 + Math.random() * 3.4,
+                    color,
+                    age: 0,
+                    life: 18 + Math.floor(Math.random() * 16)
+                });
             }
+        }
+
+        function spawnCanvasSlashArc(cx, cy, color = '#38bdf8', radius = 64, width = 7) {
+            vfxArcs.push({
+                cx, cy, color, radius, width,
+                rot: Math.random() * Math.PI * 2,
+                span: Math.PI * (0.65 + Math.random() * 0.55),
+                age: 0,
+                life: 16
+            });
         }
 
         function spawnFloatingNumber(cx, cy, text, c1 = '#fde047', c2 = '#ef4444', fs = 15) {
@@ -2968,110 +3684,87 @@
             spawnVfxElement('vfx-screen-flash', { '--bg': bg, '--op': `${op}`, '--dur': `${dur}s` }, '', Math.round(dur * 1000) + 60);
         }
 
-        // 在指定坐标播放单次风格化视觉特效
         function playSingleImpactVfx(rect, style = 'slash', dmgLabel = '') {
             if (!rect) return;
             const { cx, cy } = rect;
-            const ox = Math.round((Math.random() - 0.5) * 36);
+            const ox = Math.round((Math.random() - 0.5) * 34);
             const oy = Math.round((Math.random() - 0.5) * 18);
 
             if (style === 'slash' || style === 'blade_combo' || style === 'heavy_slash') {
-                const rot = Math.round((Math.random() - 0.5) * 120);
                 const isHeavy = style === 'heavy_slash';
-                spawnVfxElement('vfx-slash', {
-                    left: `${cx + ox}px`, top: `${cy + oy}px`,
-                    '--rot': `${rot}deg`,
-                    '--w': isHeavy ? '190px' : '145px',
-                    '--h': isHeavy ? '18px' : '11px',
-                    '--c1': '#ffffff',
-                    '--c2': isHeavy ? '#f59e0b' : '#ef4444',
-                    '--dur': '0.26s'
-                }, '', 300);
-                spawnParticlesBurst(cx + ox, cy + oy, isHeavy ? '#fbbf24' : '#f87171', isHeavy ? 8 : 4, 48);
+                spawnCanvasSlashArc(cx + ox, cy + oy, isHeavy ? '#fbbf24' : '#f43f5e', isHeavy ? 82 : 58, isHeavy ? 10 : 6);
+                spawnParticlesBurst(cx + ox, cy + oy, isHeavy ? '#fbbf24' : '#fb7185', isHeavy ? 18 : 10, 75);
             } else if (style === 'sword_qi') {
-                const rot = Math.round((Math.random() - 0.5) * 160);
-                spawnVfxElement('vfx-slash', {
-                    left: `${cx + ox}px`, top: `${cy + oy}px`,
-                    '--rot': `${rot}deg`, '--w': '175px', '--h': '10px',
-                    '--c1': '#e0f2fe', '--c2': '#38bdf8', '--dur': '0.24s'
-                }, '', 280);
-                spawnParticlesBurst(cx + ox, cy + oy, '#38bdf8', 4, 52);
+                spawnCanvasSlashArc(cx + ox, cy + oy, '#38bdf8', 72, 7);
+                spawnCanvasSlashArc(cx + ox, cy + oy, '#e0f2fe', 52, 4);
+                spawnParticlesBurst(cx + ox, cy + oy, '#38bdf8', 10, 82);
             } else if (style === 'shadow_blade') {
-                const rot = Math.round((Math.random() - 0.5) * 160);
-                spawnVfxElement('vfx-slash', {
-                    left: `${cx + ox}px`, top: `${cy + oy}px`,
-                    '--rot': `${rot}deg`, '--w': '160px', '--h': '11px',
-                    '--c1': '#e9d5ff', '--c2': '#9333ea', '--dur': '0.24s'
-                }, '', 280);
-                spawnParticlesBurst(cx + ox, cy + oy, '#a855f7', 4, 46);
+                spawnCanvasSlashArc(cx + ox, cy + oy, '#a855f7', 68, 7);
+                spawnParticlesBurst(cx + ox, cy + oy, '#c084fc', 12, 70);
             } else if (style === 'axe_cleave') {
-                spawnVfxElement('vfx-slash', {
-                    left: `${cx}px`, top: `${cy}px`,
-                    '--rot': `${Math.round((Math.random() - 0.5) * 70)}deg`,
-                    '--w': '220px', '--h': '20px',
-                    '--c1': '#fecaca', '--c2': '#dc2626', '--dur': '0.32s'
-                }, '', 350);
-                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '95px', '--c1': '#ef4444', '--c2': '#f59e0b', '--dur': '0.35s' }, '', 380);
+                spawnCanvasSlashArc(cx, cy, '#ef4444', 90, 12);
+                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '105px', '--c1': '#ef4444', '--c2': '#f59e0b', '--dur': '0.35s' }, '', 380);
+                spawnParticlesBurst(cx, cy, '#f97316', 18, 88);
             } else if (style === 'fist_smash') {
-                spawnVfxElement('vfx-ring', { left: `${cx + ox * 0.4}px`, top: `${cy + oy * 0.4}px`, '--sz': '135px', '--c1': '#fbbf24', '--c2': '#dc2626', '--dur': '0.36s' }, '', 400);
-                spawnParticlesBurst(cx, cy, '#fbbf24', 10, 72);
+                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '145px', '--c1': '#fbbf24', '--c2': '#dc2626', '--dur': '0.38s' }, '', 420);
+                spawnParticlesBurst(cx, cy, '#fbbf24', 22, 100);
                 spawnScreenFlash('radial-gradient(circle, transparent 40%, rgba(245, 158, 11, 0.55) 100%)', 0.4, 0.22);
             } else if (style === 'arrow') {
-                spawnVfxElement('vfx-slash', {
-                    left: `${cx + ox * 0.5}px`, top: `${cy + oy * 0.5}px`,
-                    '--rot': '-18deg', '--w': '170px', '--h': '7px',
-                    '--c1': '#fef08a', '--c2': '#38bdf8', '--dur': '0.22s'
-                }, '', 250);
-                spawnParticlesBurst(cx, cy, '#fde047', 5, 42);
+                spawnCanvasSlashArc(cx + ox * 0.4, cy + oy * 0.4, '#fde047', 60, 5);
+                spawnParticlesBurst(cx, cy, '#fde047', 10, 68);
             } else if (style === 'cannon_beam') {
-                spawnVfxElement('vfx-beam', { left: `${cx}px`, top: `${cy}px`, '--w': '58px', '--h': '220px', '--c1': '#f59e0b', '--c2': '#ef4444', '--dur': '0.42s' }, '', 460);
-                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '150px', '--c1': '#fbbf24', '--c2': '#ef4444', '--dur': '0.45s' }, '', 480);
+                spawnVfxElement('vfx-beam', { left: `${cx}px`, top: `${cy}px`, '--w': '60px', '--h': '230px', '--c1': '#f59e0b', '--c2': '#ef4444', '--dur': '0.42s' }, '', 460);
+                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '155px', '--c1': '#fbbf24', '--c2': '#ef4444', '--dur': '0.45s' }, '', 480);
+                spawnParticlesBurst(cx, cy, '#fbbf24', 24, 110);
                 spawnScreenFlash('radial-gradient(circle, rgba(251,191,36,0.45), transparent 70%)', 0.45, 0.28);
             } else if (style === 'dimension_rift') {
                 spawnVfxElement('vfx-rift', { left: `${cx}px`, top: `${cy}px` }, '', 580);
-                spawnVfxElement('vfx-magic-circle', { left: `${cx}px`, top: `${cy}px`, '--sz': '140px', '--c1': '#a855f7', '--c2': '#38bdf8', '--dur': '0.55s' }, '', 580);
-                spawnScreenFlash('linear-gradient(135deg, rgba(168,85,247,0.4), transparent 50%, rgba(56,189,248,0.4))', 0.5, 0.36);
+                spawnVfxElement('vfx-magic-circle', { left: `${cx}px`, top: `${cy}px`, '--sz': '145px', '--c1': '#a855f7', '--c2': '#38bdf8', '--dur': '0.55s' }, '', 580);
+                spawnParticlesBurst(cx, cy, '#c084fc', 24, 115);
+                spawnScreenFlash('linear-gradient(135deg, rgba(168,85,247,0.42), transparent 50%, rgba(56,189,248,0.42))', 0.5, 0.36);
             } else if (style === 'magic_bolt' || style === 'arcane_beam') {
                 if (style === 'arcane_beam') {
-                    spawnVfxElement('vfx-beam', { left: `${cx}px`, top: `${cy}px`, '--w': '48px', '--h': '230px', '--c1': '#c084fc', '--c2': '#38bdf8', '--dur': '0.45s' }, '', 480);
-                    spawnVfxElement('vfx-magic-circle', { left: `${cx}px`, top: `${cy}px`, '--sz': '135px', '--c1': '#c084fc', '--c2': '#38bdf8', '--dur': '0.52s' }, '', 560);
+                    spawnVfxElement('vfx-beam', { left: `${cx}px`, top: `${cy}px`, '--w': '50px', '--h': '230px', '--c1': '#c084fc', '--c2': '#38bdf8', '--dur': '0.45s' }, '', 480);
+                    spawnVfxElement('vfx-magic-circle', { left: `${cx}px`, top: `${cy}px`, '--sz': '140px', '--c1': '#c084fc', '--c2': '#38bdf8', '--dur': '0.52s' }, '', 560);
                 } else {
-                    spawnVfxElement('vfx-ring', { left: `${cx + ox}px`, top: `${cy + oy}px`, '--sz': '68px', '--c1': '#c084fc', '--c2': '#38bdf8', '--dur': '0.30s' }, '', 340);
+                    spawnVfxElement('vfx-ring', { left: `${cx + ox}px`, top: `${cy + oy}px`, '--sz': '70px', '--c1': '#c084fc', '--c2': '#38bdf8', '--dur': '0.30s' }, '', 340);
                 }
-                spawnParticlesBurst(cx + ox, cy + oy, '#c084fc', 7, 56);
+                spawnParticlesBurst(cx + ox, cy + oy, '#c084fc', 16, 85);
             } else if (style === 'qigong_wave') {
-                spawnVfxElement('vfx-beam', { left: `${cx}px`, top: `${cy}px`, '--w': '52px', '--h': '220px', '--c1': '#38bdf8', '--c2': '#2dd4bf', '--dur': '0.44s' }, '', 480);
-                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '140px', '--c1': '#2dd4bf', '--c2': '#38bdf8', '--dur': '0.45s' }, '', 480);
+                spawnVfxElement('vfx-beam', { left: `${cx}px`, top: `${cy}px`, '--w': '54px', '--h': '220px', '--c1': '#38bdf8', '--c2': '#2dd4bf', '--dur': '0.44s' }, '', 480);
+                spawnParticlesBurst(cx, cy, '#2dd4bf', 20, 95);
             } else if (style === 'poison') {
-                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '115px', '--c1': '#10b981', '--c2': '#9333ea', '--dur': '0.46s' }, '', 500);
-                spawnParticlesBurst(cx, cy, '#10b981', 10, 62);
-                spawnParticlesBurst(cx, cy, '#a855f7', 6, 48);
+                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '118px', '--c1': '#10b981', '--c2': '#9333ea', '--dur': '0.46s' }, '', 500);
+                spawnParticlesBurst(cx, cy, '#10b981', 16, 78);
+                spawnParticlesBurst(cx, cy, '#a855f7', 10, 62);
             } else if (style === 'bite') {
-                spawnVfxElement('vfx-slash', { left: `${cx}px`, top: `${cy - 10}px`, '--rot': '25deg', '--w': '130px', '--h': '14px', '--c1': '#fff', '--c2': '#e11d48', '--dur': '0.28s' }, '', 320);
-                spawnVfxElement('vfx-slash', { left: `${cx}px`, top: `${cy + 10}px`, '--rot': '-25deg', '--w': '130px', '--h': '14px', '--c1': '#fff', '--c2': '#e11d48', '--dur': '0.28s' }, '', 320);
-                spawnParticlesBurst(cx, cy, '#f43f5e', 9, 55);
+                spawnCanvasSlashArc(cx, cy - 8, '#f43f5e', 56, 8);
+                spawnCanvasSlashArc(cx, cy + 8, '#fb7185', 56, 8);
+                spawnParticlesBurst(cx, cy, '#f43f5e', 16, 72);
             } else if (style === 'sonic') {
-                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '120px', '--c1': '#38bdf8', '--c2': '#a855f7', '--dur': '0.42s' }, '', 460);
-                setTimeout(() => spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '165px', '--c1': '#c084fc', '--c2': '#38bdf8', '--dur': '0.48s' }, '', 520), 90);
+                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '125px', '--c1': '#38bdf8', '--c2': '#a855f7', '--dur': '0.42s' }, '', 460);
+                setTimeout(() => spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '170px', '--c1': '#c084fc', '--c2': '#38bdf8', '--dur': '0.48s' }, '', 520), 90);
+                spawnParticlesBurst(cx, cy, '#38bdf8', 14, 85);
             } else if (style === 'doomsday') {
-                spawnVfxElement('vfx-beam', { left: `${cx}px`, top: `${cy}px`, '--w': '76px', '--h': '360px', '--c1': '#e11d48', '--c2': '#7e22ce', '--dur': '0.58s' }, '', 620);
-                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '190px', '--c1': '#f43f5e', '--c2': '#a855f7', '--dur': '0.56s' }, '', 600);
+                spawnVfxElement('vfx-beam', { left: `${cx}px`, top: `${cy}px`, '--w': '78px', '--h': '360px', '--c1': '#e11d48', '--c2': '#7e22ce', '--dur': '0.58s' }, '', 620);
+                spawnVfxElement('vfx-ring', { left: `${cx}px`, top: `${cy}px`, '--sz': '195px', '--c1': '#f43f5e', '--c2': '#a855f7', '--dur': '0.56s' }, '', 600);
+                spawnParticlesBurst(cx, cy, '#f43f5e', 28, 125);
                 spawnScreenFlash('radial-gradient(circle, rgba(225,29,72,0.55), rgba(88,28,135,0.45))', 0.6, 0.45);
             } else if (style === 'cosmic_all') {
                 ['#f43f5e', '#f59e0b', '#10b981', '#38bdf8', '#a855f7'].forEach((col, i) => {
                     setTimeout(() => {
-                        spawnVfxElement('vfx-magic-circle', { left: `${cx}px`, top: `${cy}px`, '--sz': `${110 + i * 24}px`, '--c1': col, '--c2': '#fff', '--dur': '0.55s' }, '', 580);
-                        spawnParticlesBurst(cx, cy, col, 6, 75);
+                        spawnVfxElement('vfx-magic-circle', { left: `${cx}px`, top: `${cy}px`, '--sz': `${115 + i * 24}px`, '--c1': col, '--c2': '#fff', '--dur': '0.55s' }, '', 580);
+                        spawnParticlesBurst(cx, cy, col, 14, 105);
                     }, i * 55);
                 });
                 spawnScreenFlash('linear-gradient(135deg, rgba(244,63,94,0.35), rgba(56,189,248,0.35), rgba(168,85,247,0.35))', 0.55, 0.48);
             } else if (style === 'shield' || style === 'heal' || style === 'buff' || style === 'summon') {
                 const colMap = { shield: ['#38bdf8', '#0284c7'], heal: ['#34d399', '#fbbf24'], buff: ['#fbbf24', '#f97316'], summon: ['#c084fc', '#fbbf24'] };
                 const [c1, c2] = colMap[style];
-                spawnVfxElement('vfx-magic-circle', { left: `${cx}px`, top: `${cy}px`, '--sz': '135px', '--c1': c1, '--c2': c2, '--dur': '0.58s' }, '', 620);
-                spawnParticlesBurst(cx, cy, c1, 10, 60);
+                spawnVfxElement('vfx-magic-circle', { left: `${cx}px`, top: `${cy}px`, '--sz': '140px', '--c1': c1, '--c2': c2, '--dur': '0.58s' }, '', 620);
+                spawnParticlesBurst(cx, cy, c1, 16, 82);
             } else if (style === 'coins') {
-                spawnParticlesBurst(cx, cy, '#fbbf24', 12, 68);
+                spawnParticlesBurst(cx, cy, '#fbbf24', 18, 85);
                 spawnFloatingNumber(cx, cy - 10, '🪙 -铜币!', '#fde047', '#b45309', 13);
             }
 
@@ -3081,13 +3774,11 @@
             }
         }
 
-        // 玩家技能专属多段连击 & 特色视听调度器（覆盖全部 57 个主动技能）
         function playPlayerSkillVfxAndSfx(skillId, targetRects, hitCount = 1, dispName = '') {
             const playerRect = getPlayerHudRect();
             const rects = (targetRects && targetRects.length > 0) ? targetRects : [playerRect];
             const spdMult = state.battleSpeed === 2 ? 2 : 1;
 
-            // 1. 真正按段数逐发播放的多段连击技能（万剑 / 乱劈 / 影子狂击 / 无边剑气）
             if (skillId === 'boundless_sword_qi') {
                 const totalHits = Math.max(10, hitCount || 20);
                 const gap = Math.max(22, Math.round(48 / spdMult));
@@ -3134,7 +3825,6 @@
                 return;
             }
 
-            // 2. 独立定制的单发/群体特色大招与 Buff 技能
             const profileMap = {
                 all_methods:          { sfx: 'all_methods_cosmic', vfx: 'cosmic_all', target: 'enemy' },
                 contemplate_all:      { sfx: 'heal_chime',         vfx: 'heal',       target: 'player' },
@@ -3194,7 +3884,6 @@
             }
         }
 
-        // 怪物真实多段连击演出器（如：新手末路 10 连击真正连续攻击 10 次！妖王三拳 3 次！魔力乱舞 1~8 次！）
         async function playMonsterComboVisual(monster, hitCount, style, segDmgs = [], titleText = '') {
             const pRect = getPlayerHudRect();
             const hits = Math.max(1, hitCount || 1);
@@ -3207,14 +3896,13 @@
             for (let i = 0; i < hits; i++) {
                 if (!state.run || state.run.phase !== 'battle' || !state.run.battle) return;
 
-                // 每一下攻击都有音调递升或重击感的独立音效
                 if (style === 'blade_combo') {
                     const pitch = 520 + i * 75;
                     try {
                         ensureAudio();
                         if (state.settings.sfx) {
-                            playTone(pitch, pitch * 0.25, 'sawtooth', 0.08, 0.38, 0);
-                            playNoise(0.06, 0.26, 2000 + i * 180, 'bandpass', 0);
+                            playTone(pitch, pitch * 0.25, 'sawtooth', 0.08, 0.34, 0, 0.25);
+                            playNoise(0.06, 0.22, 2000 + i * 180, 'bandpass', 0);
                         }
                     } catch (e) {}
                 } else if (style === 'fist_smash') {
@@ -3227,7 +3915,6 @@
                     playSignatureSfx('slash_single');
                 }
 
-                // 怪物卡片每次出招同步脉冲前冲
                 if (i > 0 && (hits <= 4 || i % 2 === 0)) {
                     triggerMonsterCardVisual(monster.uid, 'monster-lunge-anim', `<span class="bg-rose-950 text-amber-300 border-rose-400">⚔️ 连击 ${i + 1}/${hits}</span>`);
                 }
@@ -3245,7 +3932,7 @@
                 await combatSleep(gapMs);
             }
         }
-        // 怪物攻击或释放技能前：自动平滑滚动将其置顶到视野最上方，并点亮金色聚焦光环
+
         async function focusActingMonster(monsterUid) {
             if (!monsterUid) return;
             const upper = document.getElementById('run-upper-stage');
@@ -3260,7 +3947,6 @@
             }
         }
 
-        // 玩家攻击或施法时：若选中的目标怪物卡片不在可见视野内，自动将其滚动到清晰可见位置
         function scrollMonsterIntoView(monsterUid) {
             if (!monsterUid) return;
             const upper = document.getElementById('run-upper-stage');
@@ -3273,6 +3959,7 @@
                 upper.scrollTo({ top: targetTop, behavior: 'smooth' });
             }
         }
+
         function triggerMonsterCardVisual(monsterUid, animClass, badgeHtml = '') {
             if (!monsterUid) return;
             const cardEl = document.getElementById(`monster-card-${monsterUid}`);
@@ -3308,71 +3995,6 @@
             hpCard.classList.remove('player-buff-anim');
             void hpCard.offsetWidth;
             hpCard.classList.add('player-buff-anim');
-        }
-
-        // 升级版 5 场景多声部动态 BGM（探索 / 村庄城镇圣地 / 普通战斗 / 首领激战 / 英雄终焉史诗交响）
-        function startBgmLoop() {
-            if (bgmTimer) return;
-            const exploreMel = [261.63, 329.63, 392.00, 523.25, 493.88, 392.00, 329.63, 293.66, 261.63, 293.66, 349.23, 440.00, 392.00, 349.23, 329.63, 293.66];
-            const exploreBas = [130.81, 196.00, 164.81, 196.00, 110.00, 164.81, 146.83, 174.61];
-            const townMel    = [392.00, 440.00, 523.25, 659.25, 587.33, 523.25, 440.00, 392.00, 329.63, 392.00, 440.00, 523.25, 440.00, 392.00, 329.63, 293.66];
-            const battleMel  = [220.00, 261.63, 329.63, 293.66, 329.63, 392.00, 349.23, 329.63, 220.00, 261.63, 293.66, 349.23, 392.00, 349.23, 329.63, 246.94];
-            const bossMel    = [293.66, 349.23, 440.00, 466.16, 587.33, 523.25, 466.16, 440.00, 349.23, 440.00, 523.25, 659.25, 587.33, 523.25, 440.00, 415.30];
-            const heroArp    = [440.00, 523.25, 659.25, 880.00, 659.25, 523.25, 440.00, 392.00];
-
-            bgmTimer = setInterval(() => {
-                if (!state.settings.bgm || document.hidden || !audioCtx || audioCtx.state !== 'running') return;
-                const run = state.run;
-                const inSafeHub = run && ['village', 'town', 'sanctuary'].includes(run.phase);
-                const inBattle = run && run.phase === 'battle' && run.battle;
-                const isHero = inBattle && run.battle.monsters.some(m => m.hp > 0 && !m.escaped && m.tier === '英雄');
-                const isBoss = inBattle && run.battle.monsters.some(m => m.hp > 0 && !m.escaped && (m.tier === '首领' || m.tier === '终极首领' || m.tier === '英雄'));
-
-                bgmStep = (bgmStep + 1) % 32;
-                const idx16 = bgmStep % 16;
-
-                if (isHero) {
-                    // 英雄终焉战：高速琶音 + 史诗主旋律 + 双踩底鼓与军鼓
-                    const f = bossMel[idx16] * 1.122;
-                    playTone(f, f, 'sawtooth', 0.14, 0.13, 0);
-                    playTone(heroArp[bgmStep % heroArp.length], heroArp[bgmStep % heroArp.length], 'triangle', 0.10, 0.09, 0);
-                    if (bgmStep % 2 === 0) playTone(92, 42, 'sine', 0.11, 0.24, 0); // 底鼓 Kick
-                    if (bgmStep % 4 === 2) playNoise(0.06, 0.10, 2600, 'highpass', 0); // 军鼓/踩镲
-                } else if (isBoss) {
-                    // 首领激战：紧凑摇滚低音 + 鼓点 + 强音主旋律
-                    const f = bossMel[idx16];
-                    playTone(f, f, 'sawtooth', 0.13, 0.12, 0);
-                    playTone(bgmStep % 2 === 0 ? 73.42 : 146.83, 68, 'triangle', 0.12, 0.15, 0);
-                    if (bgmStep % 4 === 0) playTone(95, 45, 'sine', 0.10, 0.22, 0);
-                    if (bgmStep % 4 === 2) playNoise(0.05, 0.09, 3000, 'highpass', 0);
-                } else if (inBattle) {
-                    // 普通战斗：动感 8-bit 律动 + 轻打击乐
-                    if (bgmStep % 2 === 0) {
-                        const f = battleMel[(bgmStep / 2) % battleMel.length];
-                        playTone(f, f, 'square', 0.19, 0.10, 0);
-                        playTone(f * 0.5, f * 0.5, 'triangle', 0.18, 0.12, 0);
-                        if ((bgmStep / 2) % 2 === 0) playTone(100, 48, 'sine', 0.09, 0.18, 0);
-                        else playNoise(0.04, 0.07, 3600, 'highpass', 0);
-                    }
-                } else if (inSafeHub) {
-                    // 村庄/城镇/圣地：舒缓竖琴长笛治愈和弦
-                    if (bgmStep % 2 === 0) {
-                        const s8 = (bgmStep / 2) % 16;
-                        const f = townMel[s8];
-                        playTone(f, f, 'sine', 0.34, 0.11, 0);
-                        if (s8 % 4 === 0) playTone(f * 0.5, f * 0.5, 'triangle', 0.45, 0.09, 0);
-                    }
-                } else {
-                    // 首页/道路探索：悠扬五声冒险旋律 + 柔和低音
-                    if (bgmStep % 2 === 0) {
-                        const step8 = (bgmStep / 2) % 16;
-                        const f = exploreMel[step8];
-                        const b = exploreBas[step8 % exploreBas.length];
-                        playTone(f, f, 'sine', 0.28, 0.11, 0);
-                        if (step8 % 2 === 0) playTone(b, b, 'triangle', 0.34, 0.09, 0);
-                    }
-                }
-            }, 155);
         }
 
         function triggerHurtShake() {
@@ -4793,7 +5415,7 @@
             if (run.battle.stealthTurns > 0) {
                 addBattleLog(run.battle, `🌑 刺客【强隐】触发：开局自动进入隐身状态！`);
             }
-
+            triggerBossIntroBanner(monsters);
             startNewBattleRound();
         }
         function getActivePaladin(battle) {
@@ -12069,10 +12691,13 @@
 
                 const card = document.createElement('div');
                 card.id = `monster-card-${m.uid}`;
-                card.className = `relative p-3 rounded-2xl border transition ${
+                const tierAura = m.tier === '英雄'
+                    ? 'tier-card-hero'
+                    : ((m.tier === '首领' || m.tier === '终极首领') ? 'tier-card-boss' : ((m.tier === '精英' || m.tier === '精英护卫') ? 'tier-card-elite' : ''));
+                card.className = `relative p-3 rounded-2xl border transition ${tierAura} ${
                     isActing
                         ? 'monster-acting-spotlight'
-                        : (isTarget ? 'bg-slate-900 border-amber-500 shadow-md shadow-amber-500/10' : 'bg-slate-900/90 border-slate-800 hover:border-slate-700 cursor-pointer')
+                        : (isTarget ? 'bg-slate-900 border-amber-500 shadow-md shadow-amber-500/15' : 'bg-slate-900/90 border-slate-800 hover:border-slate-700 cursor-pointer')
                 }`;
 
                 card.onclick = () => {
@@ -13696,6 +14321,7 @@
         // 八、 初始化事件绑定
         // =========================================================================
         window.onload = function () {
+            startAmbientVisualEngine();
             renderStageList();
             renderDifficultySection();
             renderAccountUI();
