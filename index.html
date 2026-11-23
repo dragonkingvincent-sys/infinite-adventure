@@ -512,8 +512,11 @@
                     <button id="btn-open-bestiary" class="whitespace-nowrap px-2 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 text-[11px] font-bold transition shadow-md">
                         📖 图鉴
                     </button>
-                    <button id="btn-open-settings" class="whitespace-nowrap px-2 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 text-[11px] font-bold transition shadow-md">
-                        ⚙️ 设置
+                    <button id="btn-open-settings" aria-label="Settings" title="Settings" class="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 transition shadow-md group flex-shrink-0">
+                        <svg class="w-4 h-4 transition-transform duration-300 group-hover:rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
                     </button>
                 </div>
             </header>
@@ -733,7 +736,20 @@
                     <button id="btn-close-settings" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">✕</button>
                 </div>
 
-                <div class="p-5 space-y-5">
+                <div class="p-5 space-y-5 max-h-[78vh] overflow-y-auto scroll-container">
+                    <!-- 语言切换模块（置顶显示，方便非中文玩家一键切换） -->
+                    <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span data-no-i18n="1" class="text-xs font-bold text-slate-200">🌐 Language / 语言</span>
+                            <span id="current-lang-badge" data-no-i18n="1" class="text-[11px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">简体中文</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" data-lang="zh" data-no-i18n="1" class="btn-switch-lang py-2 rounded-lg text-xs font-bold border transition bg-amber-500 text-slate-950 border-amber-400">简体中文</button>
+                            <button type="button" data-lang="en" data-no-i18n="1" class="btn-switch-lang py-2 rounded-lg text-xs font-bold border transition bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500">English</button>
+                            <button type="button" data-lang="ms" data-no-i18n="1" class="btn-switch-lang py-2 rounded-lg text-xs font-bold border transition bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500">Melayu</button>
+                        </div>
+                    </div>
+
                     <!-- 可选登录模块 -->
                     <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
                         <div class="flex items-center justify-between">
@@ -15140,6 +15156,569 @@
                 navigator.serviceWorker.register('./sw.js').catch(() => {});
             });
         }
+    </script>
+    <script>
+        // =========================================================================
+        // 多语言自动切换引擎（简体中文 / English / Bahasa Melayu）
+        // =========================================================================
+        (function initI18nEngine() {
+            const LANG_STORAGE_KEY = 'RG_GAME_LANG';
+            const LANG_NAMES = { zh: '简体中文', en: 'English', ms: 'Melayu' };
+            const PAGE_TITLES = { zh: '无限冒险', en: 'Infinite Adventure', ms: 'Pengembaraan Tanpa Batas' };
+
+            const DICT = {
+                en: [
+                    ['未登录（游客模式）', 'Guest Mode (Not Logged In)'],
+                    ['未佩戴称号', 'No Title Equipped'],
+                    ['已登录：', 'Logged in: '],
+                    ['无限冒险', 'Infinite Adventure'],
+                    ['📊 排行', '📊 Rank'],
+                    ['🏆 成就', '🏆 Achv'],
+                    ['📖 图鉴', '📖 Wiki'],
+                    ['关卡选择', 'Stage Select'],
+                    ['上下滑动列表选择要挑战的关卡', 'Scroll vertically to choose a stage'],
+                    ['选择难度', 'Difficulty'],
+                    ['新手教程默认：简单难度', 'Tutorial Default: Easy'],
+                    ['当前关卡：', 'Stage: '],
+                    ['进入关卡', 'Enter Stage'],
+                    ['已开放', 'Open'],
+                    ['未开放', 'Locked'],
+                    ['已选 ✓', 'Selected ✓'],
+                    ['可选', 'Select'],
+                    ['自动存档', 'Auto-Save'],
+                    ['检测到未完成的闯关进度', 'Unfinished run detected'],
+                    ['继续上次闯关', 'Resume Run'],
+                    ['放弃存档', 'Discard'],
+                    ['村庄休整中', 'In Village'],
+                    ['中心城镇休整中', 'In Town'],
+                    ['永恒圣地休整中', 'In Sanctuary'],
+                    ['新手教程（1-10关）', 'Tutorial (Stage 1-10)'],
+                    ['剧情～1（1-20关）', 'Story 1 (Stage 1-20)'],
+                    ['剧情～2（1-30关）', 'Story 2 (Stage 1-30)'],
+                    ['剧情～3（1-40关）', 'Story 3 (Stage 1-40)'],
+                    ['剧情～4（1-50关）', 'Story 4 (Stage 1-50)'],
+                    ['剧情～5（1-60关）', 'Story 5 (Stage 1-60)'],
+                    ['每日挑战（1-60关）', 'Daily Challenge (1-60)'],
+                    ['伤害挑战（1-3关）', 'Damage Trial (1-3)'],
+                    ['生存挑战（1-3关）', 'Survival Trial (1-3)'],
+                    ['挑战无限（无尽层数）', 'Endless Mode (∞)'],
+                    ['新手教程', 'Tutorial'],
+                    ['剧情～1', 'Story 1'],
+                    ['剧情～2', 'Story 2'],
+                    ['剧情～3', 'Story 3'],
+                    ['剧情～4', 'Story 4'],
+                    ['剧情～5', 'Story 5'],
+                    ['每日挑战', 'Daily Challenge'],
+                    ['伤害挑战', 'Damage Trial'],
+                    ['生存挑战', 'Survival Trial'],
+                    ['挑战无限', 'Endless Mode'],
+                    ['需通关剧情1', 'Clear Story 1'],
+                    ['需通关剧情2', 'Clear Story 2'],
+                    ['需通关剧情3', 'Clear Story 3'],
+                    ['需通关剧情4', 'Clear Story 4'],
+                    ['简单难度（新手教程默认）', 'Easy Mode (Tutorial Default)'],
+                    ['简单难度', 'Easy Mode'],
+                    ['普通难度', 'Normal Mode'],
+                    ['困难难度', 'Hard Mode'],
+                    ['挑战难度', 'Challenge Mode'],
+                    ['地狱难度', 'Hell Mode'],
+                    ['怪物生命值、攻击力只有普通的 70%。', 'Monster HP & ATK are 70% of Normal.'],
+                    ['标准 100% 怪物生命值与攻击力。', 'Standard 100% Monster HP & ATK.'],
+                    ['怪物生命值 +100%，攻击力 +50%。', 'Monster HP +100%, ATK +50%.'],
+                    ['怪物生命值 +100%，攻击力 +50%，且玩家不会遇到除怪物之外的其他事件。', 'Monster HP +100%, ATK +50%. Monsters only, no other events.'],
+                    ['怪物生命值 +100%，攻击力 +50%，且所有怪物阶级 +1（普通怪全部变成精英、精英变成首领、首领变成英雄）。', 'Monster HP +100%, ATK +50%, all monster tiers +1 (Normal→Elite→Boss→Hero).'],
+                    ['简单', 'Easy'],
+                    ['普通', 'Normal'],
+                    ['困难', 'Hard'],
+                    ['挑战', 'Chall.'],
+                    ['地狱', 'Hell'],
+                    ['第一步：职业选择界面', 'Step 1: Choose Class'],
+                    ['第一步：选择职业', 'Step 1: Choose Class'],
+                    ['第二步：天赋抽取界面', 'Step 2: Choose Talent'],
+                    ['返回首页', 'Home'],
+                    ['下一步：进入天赋抽取界面', 'Next: Choose Talent'],
+                    ['下一步：进入天赋抽取', 'Next: Choose Talent'],
+                    ['随机抽取', 'Random'],
+                    ['可点击【随机抽取天赋】或直接点击卡片选择测试', 'Tap Random or pick a talent card directly'],
+                    ['已解锁', 'Unlocked'],
+                    ['未解锁', 'Locked'],
+                    ['已携带 ✓', 'Equipped ✓'],
+                    ['点击选择', 'Tap to Pick'],
+                    ['开局自带技能：', 'Starter Skills: '],
+                    ['能量：', 'Energy: '],
+                    ['进阶职业·上限80级', 'Adv. Class · Max Lv.80'],
+                    ['高级职业·上限150级', 'High Class · Max Lv.150'],
+                    ['时光回溯', 'Time Rewind'],
+                    ['先知', 'Prophet'],
+                    ['奖励翻倍', 'Double Reward'],
+                    ['万法天尊', 'Omnimage Sovereign'],
+                    ['精神操控师', 'Mind Controller'],
+                    ['大魔导师', 'Archmage'],
+                    ['剑道宗师', 'Sword Grandmaster'],
+                    ['狂战士', 'Berserker'],
+                    ['弩炮手', 'Ballista'],
+                    ['练气期', 'Qi Refiner'],
+                    ['召唤师', 'Summoner'],
+                    ['气功师', 'Qigong Master'],
+                    ['影刺', 'Shadow Assassin'],
+                    ['散人', 'Freelancer'],
+                    ['法师', 'Mage'],
+                    ['射手', 'Archer'],
+                    ['战士', 'Warrior'],
+                    ['坦克', 'Tank'],
+                    ['牧师', 'Priest'],
+                    ['刺客', 'Assassin'],
+                    ['剑客', 'Swordsman'],
+                    ['骑士', 'Knight'],
+                    ['退出关卡', 'Exit'],
+                    ['职业：', 'Class: '],
+                    ['金币:', 'Gold:'],
+                    ['属性/包', 'Stats/Bag'],
+                    ['生命值', 'HP'],
+                    ['精力', 'SP'],
+                    ['魔力', 'MP'],
+                    ['体力', 'STA'],
+                    ['斗气', 'Fury'],
+                    ['硬气', 'Grit'],
+                    ['圣力', 'Holy'],
+                    ['影力', 'Shadow'],
+                    ['真气', 'Qi'],
+                    ['剑气', 'Sword Qi'],
+                    ['万能', 'Omni'],
+                    ['角色属性与加点', 'Stats & Points'],
+                    ['喝药与技能书', 'Potions & Books'],
+                    ['角色面板 · 物品喝药 · 技能与加点', 'Character · Potions · Skills & Stats'],
+                    ['上方可直接喝药/用技能书，下方查看属性与加点', 'Use potions/books above, allocate stats below'],
+                    ['随身物品栏（喝药水 / 学习技能书）', 'Inventory (Potions / Skill Books)'],
+                    ['收起战报 ▾', 'Hide Log ▾'],
+                    ['战报 ▴', 'Log ▴'],
+                    ['攻击', 'Attack'],
+                    ['防御', 'Defend'],
+                    ['逃跑', 'Flee'],
+                    ['召攻', 'Pet ATK'],
+                    ['召防', 'Pet DEF'],
+                    ['切本体', 'Player'],
+                    ['召技', 'Pet Skill'],
+                    ['技能', 'Skills'],
+                    ['属性', 'Info'],
+                    ['未知意图', 'Unknown'],
+                    ['路线指引：', 'Guide: '],
+                    ['进入 ▸', 'Enter ▸'],
+                    ['山洞', 'Cave'],
+                    ['树林', 'Forest'],
+                    ['小路', 'Path'],
+                    ['废墟', 'Ruins'],
+                    ['沼泽', 'Swamp'],
+                    ['墓地', 'Graveyard'],
+                    ['异界', 'Otherworld'],
+                    ['末地', 'The End'],
+                    ['恭喜通关', 'Stage Cleared!'],
+                    ['返回游戏首页', 'Back to Home'],
+                    ['闯关失败 · 战败死因复盘', 'Defeated · Battle Recap'],
+                    ['再来一局', 'Retry'],
+                    ['药水', 'Potions'],
+                    ['技能书', 'Skill Books'],
+                    ['高级红药', 'Max HP Potion'],
+                    ['高级蓝药', 'Max MP Potion'],
+                    ['红药', 'HP Potion'],
+                    ['蓝药', 'MP Potion'],
+                    ['喝高级红药', 'Use Max HP'],
+                    ['喝高级蓝药', 'Use Max MP'],
+                    ['喝红药', 'Use HP'],
+                    ['喝蓝药', 'Use MP'],
+                    ['力量', 'STR'],
+                    ['体质', 'VIT'],
+                    ['敏捷', 'AGI'],
+                    ['智力', 'INT'],
+                    ['智慧', 'WIS'],
+                    ['攻击力', 'ATK'],
+                    ['防御力', 'DEF'],
+                    ['速度', 'SPD'],
+                    ['精神强度', 'SPI'],
+                    ['命中', 'HIT'],
+                    ['闪避', 'EVA'],
+                    ['全加', 'MAX'],
+                    ['可用自由属性点：', 'Free Points: '],
+                    ['游戏设置', 'Settings'],
+                    ['账号登录（自由选择）', 'Account Login (Optional)'],
+                    ['未登录', 'Guest'],
+                    ['已登录', 'Online'],
+                    ['请输入账号名称', 'Enter username'],
+                    ['请输入登录密码', 'Enter password'],
+                    ['登录 / 注册账号', 'Login / Register'],
+                    ['使用 Google 账号一键登录', 'Sign in with Google'],
+                    ['当前已登录', 'Signed in'],
+                    ['退出登录', 'Logout'],
+                    ['视听反馈设置', 'Audio & Haptics'],
+                    ['背景音乐', 'Background Music'],
+                    ['控制游戏内背景音乐播放', 'Toggle in-game soundtrack'],
+                    ['攻击 / 技能音效', 'Sound Effects (SFX)'],
+                    ['控制点击、攻击与技能释放音效', 'Toggle attack & skill SFX'],
+                    ['受击震动动画', 'Hit Screen Shake'],
+                    ['战斗中受到伤害时触发画面震动', 'Toggle screen shake on hit'],
+                    ['怪物图鉴', 'Monster Bestiary'],
+                    ['怪物属性面板', 'Monster Stats'],
+                    ['成就系统', 'Achievements'],
+                    ['全服联机排行榜', 'Global Leaderboard'],
+                    ['关卡榜', 'Stages'],
+                    ['无限榜', 'Endless'],
+                    ['成就榜', 'Achv'],
+                    ['伤害榜', 'Damage'],
+                    ['生存榜', 'Survival'],
+                    ['上传并刷新排名', 'Sync & Refresh'],
+                    ['全部', 'All'],
+                    ['铜币', 'Coins']
+                ],
+                ms: [
+                    ['未登录（游客模式）', 'Mod Tetamu (Belum Log Masuk)'],
+                    ['未佩戴称号', 'Tiada Gelaran'],
+                    ['已登录：', 'Log masuk: '],
+                    ['无限冒险', 'Pengembaraan Tanpa Batas'],
+                    ['📊 排行', '📊 Carta'],
+                    ['🏆 成就', '🏆 Pencapaian'],
+                    ['📖 图鉴', '📖 Raksasa'],
+                    ['关卡选择', 'Pilih Peringkat'],
+                    ['上下滑动列表选择要挑战的关卡', 'Tatal ke atas/bawah untuk pilih peringkat'],
+                    ['选择难度', 'Tahap Kesukaran'],
+                    ['新手教程默认：简单难度', 'Lalai Tutorial: Mudah'],
+                    ['当前关卡：', 'Peringkat: '],
+                    ['进入关卡', 'Mula Peringkat'],
+                    ['已开放', 'Dibuka'],
+                    ['未开放', 'Terkunci'],
+                    ['已选 ✓', 'Dipilih ✓'],
+                    ['可选', 'Pilih'],
+                    ['自动存档', 'Auto-Simpan'],
+                    ['检测到未完成的闯关进度', 'Kemajuan belum selesai dikesan'],
+                    ['继续上次闯关', 'Sambung Semula'],
+                    ['放弃存档', 'Padam'],
+                    ['村庄休整中', 'Di Kampung'],
+                    ['中心城镇休整中', 'Di Bandar'],
+                    ['永恒圣地休整中', 'Di Tanah Suci'],
+                    ['新手教程（1-10关）', 'Tutorial (Tahap 1-10)'],
+                    ['剧情～1（1-20关）', 'Cerita 1 (Tahap 1-20)'],
+                    ['剧情～2（1-30关）', 'Cerita 2 (Tahap 1-30)'],
+                    ['剧情～3（1-40关）', 'Cerita 3 (Tahap 1-40)'],
+                    ['剧情～4（1-50关）', 'Cerita 4 (Tahap 1-50)'],
+                    ['剧情～5（1-60关）', 'Cerita 5 (Tahap 1-60)'],
+                    ['每日挑战（1-60关）', 'Cabaran Harian (1-60)'],
+                    ['伤害挑战（1-3关）', 'Ujian Serangan (1-3)'],
+                    ['生存挑战（1-3关）', 'Ujian Bertahan (1-3)'],
+                    ['挑战无限（无尽层数）', 'Mod Tanpa Batas (∞)'],
+                    ['新手教程', 'Tutorial'],
+                    ['剧情～1', 'Cerita 1'],
+                    ['剧情～2', 'Cerita 2'],
+                    ['剧情～3', 'Cerita 3'],
+                    ['剧情～4', 'Cerita 4'],
+                    ['剧情～5', 'Cerita 5'],
+                    ['每日挑战', 'Cabaran Harian'],
+                    ['伤害挑战', 'Ujian Serangan'],
+                    ['生存挑战', 'Ujian Bertahan'],
+                    ['挑战无限', 'Mod Tanpa Batas'],
+                    ['需通关剧情1', 'Tamat Cerita 1'],
+                    ['需通关剧情2', 'Tamat Cerita 2'],
+                    ['需通关剧情3', 'Tamat Cerita 3'],
+                    ['需通关剧情4', 'Tamat Cerita 4'],
+                    ['简单难度（新手教程默认）', 'Mod Mudah (Lalai Tutorial)'],
+                    ['简单难度', 'Mod Mudah'],
+                    ['普通难度', 'Mod Biasa'],
+                    ['困难难度', 'Mod Sukar'],
+                    ['挑战难度', 'Mod Cabaran'],
+                    ['地狱难度', 'Mod Neraka'],
+                    ['怪物生命值、攻击力只有普通的 70%。', 'HP & Serangan raksasa 70% daripada Biasa.'],
+                    ['标准 100% 怪物生命值与攻击力。', '100% HP & Serangan raksasa standard.'],
+                    ['怪物生命值 +100%，攻击力 +50%。', 'HP raksasa +100%, Serangan +50%.'],
+                    ['怪物生命值 +100%，攻击力 +50%，且玩家不会遇到除怪物之外的其他事件。', 'HP +100%, Serangan +50%. Raksasa sahaja, tiada acara lain.'],
+                    ['怪物生命值 +100%，攻击力 +50%，且所有怪物阶级 +1（普通怪全部变成精英、精英变成首领、首领变成英雄）。', 'HP +100%, Serangan +50%, semua gred raksasa +1.'],
+                    ['简单', 'Mudah'],
+                    ['普通', 'Biasa'],
+                    ['困难', 'Sukar'],
+                    ['挑战', 'Cabar'],
+                    ['地狱', 'Neraka'],
+                    ['第一步：职业选择界面', 'Langkah 1: Pilih Kelas'],
+                    ['第一步：选择职业', 'Langkah 1: Pilih Kelas'],
+                    ['第二步：天赋抽取界面', 'Langkah 2: Pilih Bakat'],
+                    ['返回首页', 'Utama'],
+                    ['下一步：进入天赋抽取界面', 'Seterusnya: Pilih Bakat'],
+                    ['下一步：进入天赋抽取', 'Seterusnya: Pilih Bakat'],
+                    ['随机抽取', 'Rawak'],
+                    ['已解锁', 'Dibuka'],
+                    ['未解锁', 'Terkunci'],
+                    ['已携带 ✓', 'Dipilih ✓'],
+                    ['点击选择', 'Klik Pilih'],
+                    ['能量：', 'Tenaga: '],
+                    ['万法天尊', 'Mahaguru Agung'],
+                    ['精神操控师', 'Pengawal Minda'],
+                    ['大魔导师', 'Ahli Sihir Agung'],
+                    ['剑道宗师', 'Pendekar Agung'],
+                    ['狂战士', 'Pahlawan Ganas'],
+                    ['弩炮手', 'Penembak Busur'],
+                    ['练气期', 'Pertapa Qi'],
+                    ['召唤师', 'Pemanggil'],
+                    ['气功师', 'Ahli Qigong'],
+                    ['影刺', 'Pembunuh Bayang'],
+                    ['散人', 'Pengembara'],
+                    ['法师', 'Ahli Sihir'],
+                    ['射手', 'Pemanah'],
+                    ['战士', 'Pahlawan'],
+                    ['坦克', 'Perisai'],
+                    ['牧师', 'Pendeta'],
+                    ['刺客', 'Pembunuh'],
+                    ['剑客', 'Pendekar'],
+                    ['骑士', 'Kesatria'],
+                    ['退出关卡', 'Keluar'],
+                    ['职业：', 'Kelas: '],
+                    ['金币:', 'Syiling:'],
+                    ['属性/包', 'Stat/Beg'],
+                    ['生命值', 'HP'],
+                    ['精力', 'SP'],
+                    ['魔力', 'MP'],
+                    ['角色属性与加点', 'Stat & Mata'],
+                    ['喝药与技能书', 'Posyen & Buku'],
+                    ['收起战报 ▾', 'Tutup Log ▾'],
+                    ['战报 ▴', 'Log ▴'],
+                    ['攻击', 'Serang'],
+                    ['防御', 'Tahan'],
+                    ['逃跑', 'Lari'],
+                    ['切本体', 'Pemain'],
+                    ['技能', 'Kemahiran'],
+                    ['属性', 'Info'],
+                    ['未知意图', 'Tidak Diketahui'],
+                    ['路线指引：', 'Panduan: '],
+                    ['进入 ▸', 'Masuk ▸'],
+                    ['山洞', 'Gua'],
+                    ['树林', 'Hutan'],
+                    ['小路', 'Lorong'],
+                    ['废墟', 'Runtuhan'],
+                    ['沼泽', 'Paya'],
+                    ['墓地', 'Kubur'],
+                    ['异界', 'Alam Lain'],
+                    ['末地', 'Pengakhiran'],
+                    ['恭喜通关', 'Tahap Selesai!'],
+                    ['返回游戏首页', 'Kembali ke Utama'],
+                    ['再来一局', 'Cuba Lagi'],
+                    ['药水', 'Posyen'],
+                    ['技能书', 'Buku Kemahiran'],
+                    ['高级红药', 'Posyen HP Penuh'],
+                    ['高级蓝药', 'Posyen MP Penuh'],
+                    ['红药', 'Posyen HP'],
+                    ['蓝药', 'Posyen MP'],
+                    ['力量', 'STR'],
+                    ['体质', 'VIT'],
+                    ['敏捷', 'AGI'],
+                    ['智力', 'INT'],
+                    ['智慧', 'WIS'],
+                    ['攻击力', 'ATK'],
+                    ['防御力', 'DEF'],
+                    ['速度', 'SPD'],
+                    ['精神强度', 'SPI'],
+                    ['命中', 'HIT'],
+                    ['闪避', 'EVA'],
+                    ['全加', 'MAKS'],
+                    ['游戏设置', 'Tetapan'],
+                    ['账号登录（自由选择）', 'Log Masuk Akaun (Pilihan)'],
+                    ['未登录', 'Tetamu'],
+                    ['已登录', 'Dalam Talian'],
+                    ['请输入账号名称', 'Masukkan nama akaun'],
+                    ['请输入登录密码', 'Masukkan kata laluan'],
+                    ['登录 / 注册账号', 'Log Masuk / Daftar'],
+                    ['使用 Google 账号一键登录', 'Log masuk dengan Google'],
+                    ['当前已登录', 'Telah log masuk'],
+                    ['退出登录', 'Log Keluar'],
+                    ['视听反馈设置', 'Audio & Getaran'],
+                    ['背景音乐', 'Muzik Latar'],
+                    ['控制游戏内背景音乐播放', 'Hidup/matikan muzik latar'],
+                    ['攻击 / 技能音效', 'Kesan Bunyi (SFX)'],
+                    ['控制点击、攻击与技能释放音效', 'Hidup/matikan kesan bunyi'],
+                    ['受击震动动画', 'Gegaran Skrin'],
+                    ['战斗中受到伤害时触发画面震动', 'Gegaran skrin apabila diserang'],
+                    ['怪物图鉴', 'Ensiklopedia Raksasa'],
+                    ['怪物属性面板', 'Stat Raksasa'],
+                    ['成就系统', 'Pencapaian'],
+                    ['全服联机排行榜', 'Carta Global'],
+                    ['关卡榜', 'Tahap'],
+                    ['无限榜', 'Infiniti'],
+                    ['成就榜', 'Pencapaian'],
+                    ['伤害榜', 'Serangan'],
+                    ['生存榜', 'Bertahan'],
+                    ['上传并刷新排名', 'Muat Naik & Muat Semula'],
+                    ['全部', 'Semua'],
+                    ['铜币', 'Syiling']
+                ]
+            };
+
+            Object.keys(DICT).forEach(k => {
+                DICT[k].sort((a, b) => b[0].length - a[0].length);
+            });
+
+            function detectDefaultLang() {
+                try {
+                    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+                    if (saved && LANG_NAMES[saved]) return saved;
+                    const nav = (navigator.language || 'zh').toLowerCase();
+                    if (nav.startsWith('zh')) return 'zh';
+                    if (nav.startsWith('ms') || nav.startsWith('id')) return 'ms';
+                    return 'en';
+                } catch (e) {
+                    return 'zh';
+                }
+            }
+
+            let currentLang = detectDefaultLang();
+            const originalTextMap = new WeakMap();
+            const originalPlaceholderMap = new WeakMap();
+            let isTranslating = false;
+            let pendingRaf = null;
+
+            function translateString(str, lang) {
+                if (!str || lang === 'zh' || !DICT[lang]) return str;
+                if (!/[\u4e00-\u9fa5]/.test(str)) return str;
+
+                let out = str;
+                if (lang === 'en') {
+                    out = out
+                        .replace(/第\s*(\d+)\s*\/\s*(\d+)\s*关/g, 'Stage $1/$2')
+                        .replace(/第\s*(\d+)\s*关/g, 'Stage $1')
+                        .replace(/第\s*(\d+)\s*层/g, 'Floor $1')
+                        .replace(/第(\d+)回/g, 'T$1')
+                        .replace(/等级(\d+)/g, 'Lv.$1')
+                        .replace(/行:(\d+)/g, 'Act:$1')
+                        .replace(/召:(\d+)/g, 'Pet:$1')
+                        .replace(/速:/g, 'SPD:')
+                        .replace(/攻:/g, 'ATK:')
+                        .replace(/防:/g, 'DEF:')
+                        .replace(/精:/g, 'SPI:')
+                        .replace(/共\s*(\d+)\s*关/g, '$1 Stages');
+                } else if (lang === 'ms') {
+                    out = out
+                        .replace(/第\s*(\d+)\s*\/\s*(\d+)\s*关/g, 'Tahap $1/$2')
+                        .replace(/第\s*(\d+)\s*关/g, 'Tahap $1')
+                        .replace(/第\s*(\d+)\s*层/g, 'Tingkat $1')
+                        .replace(/第(\d+)回/g, 'P$1')
+                        .replace(/等级(\d+)/g, 'Lv.$1')
+                        .replace(/行:(\d+)/g, 'Aksi:$1')
+                        .replace(/召:(\d+)/g, 'Haiwan:$1')
+                        .replace(/速:/g, 'SPD:')
+                        .replace(/攻:/g, 'ATK:')
+                        .replace(/防:/g, 'DEF:')
+                        .replace(/精:/g, 'SPI:')
+                        .replace(/共\s*(\d+)\s*关/g, '$1 Tahap');
+                }
+
+                const entries = DICT[lang];
+                for (let i = 0; i < entries.length; i++) {
+                    const [zh, target] = entries[i];
+                    if (out.includes(zh)) {
+                        out = out.split(zh).join(target);
+                    }
+                }
+                return out;
+            }
+
+            function shouldSkipNode(node) {
+                const p = node.parentElement;
+                if (!p) return true;
+                if (p.tagName === 'SCRIPT' || p.tagName === 'STYLE' || p.tagName === 'SVG') return true;
+                if (p.closest('[data-no-i18n="1"]')) return true;
+                return false;
+            }
+
+            function translateSubtree(root) {
+                if (!root) return;
+                isTranslating = true;
+                try {
+                    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        if (shouldSkipNode(node)) continue;
+                        const val = node.nodeValue;
+                        if (!val || !val.trim()) continue;
+
+                        let meta = originalTextMap.get(node);
+                        if (!meta) {
+                            meta = { orig: val, lastOut: val };
+                            originalTextMap.set(node, meta);
+                        } else if (val !== meta.lastOut) {
+                            meta.orig = val;
+                        }
+
+                        const nextVal = currentLang === 'zh' ? meta.orig : translateString(meta.orig, currentLang);
+                        if (node.nodeValue !== nextVal) {
+                            node.nodeValue = nextVal;
+                        }
+                        meta.lastOut = nextVal;
+                    }
+
+                    const inputs = root.querySelectorAll ? root.querySelectorAll('input[placeholder]') : [];
+                    inputs.forEach(inp => {
+                        if (inp.closest('[data-no-i18n="1"]')) return;
+                        const ph = inp.getAttribute('placeholder') || '';
+                        let meta = originalPlaceholderMap.get(inp);
+                        if (!meta) {
+                            meta = { orig: ph, lastOut: ph };
+                            originalPlaceholderMap.set(inp, meta);
+                        } else if (ph !== meta.lastOut) {
+                            meta.orig = ph;
+                        }
+                        const nextPh = currentLang === 'zh' ? meta.orig : translateString(meta.orig, currentLang);
+                        if (ph !== nextPh) inp.setAttribute('placeholder', nextPh);
+                        meta.lastOut = nextPh;
+                    });
+                } catch (e) {}
+                isTranslating = false;
+            }
+
+            function updateLangButtonsUI() {
+                const badge = document.getElementById('current-lang-badge');
+                if (badge) badge.textContent = LANG_NAMES[currentLang] || '简体中文';
+                document.querySelectorAll('.btn-switch-lang').forEach(btn => {
+                    const isAct = btn.getAttribute('data-lang') === currentLang;
+                    btn.className = isAct
+                        ? 'btn-switch-lang py-2 rounded-lg text-xs font-black border transition bg-amber-500 text-slate-950 border-amber-400 shadow'
+                        : 'btn-switch-lang py-2 rounded-lg text-xs font-bold border transition bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500';
+                });
+                document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : currentLang;
+                document.title = PAGE_TITLES[currentLang] || '无限冒险';
+            }
+
+            function applyLanguage(lang) {
+                if (!LANG_NAMES[lang]) return;
+                currentLang = lang;
+                try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (e) {}
+                updateLangButtonsUI();
+                translateSubtree(document.getElementById('app-root') || document.body);
+            }
+
+            function scheduleTranslate() {
+                if (currentLang === 'zh' || isTranslating || pendingRaf) return;
+                pendingRaf = requestAnimationFrame(() => {
+                    pendingRaf = null;
+                    translateSubtree(document.getElementById('app-root') || document.body);
+                });
+            }
+
+            window.addEventListener('DOMContentLoaded', () => {
+                document.querySelectorAll('.btn-switch-lang').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (typeof playClickSfx === 'function') playClickSfx();
+                        const lang = btn.getAttribute('data-lang');
+                        applyLanguage(lang);
+                    });
+                });
+
+                updateLangButtonsUI();
+                const root = document.getElementById('app-root') || document.body;
+                if (currentLang !== 'zh') {
+                    translateSubtree(root);
+                }
+
+                const observer = new MutationObserver(() => {
+                    if (!isTranslating && currentLang !== 'zh') {
+                        scheduleTranslate();
+                    }
+                });
+                observer.observe(root, { childList: true, subtree: true, characterData: true });
+            });
+        })();
     </script>
 </body>
 </html>
