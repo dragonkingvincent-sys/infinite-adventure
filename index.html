@@ -775,6 +775,14 @@
                             </div>
                         </div>
                     </div>
+                    <!-- 福利兑换码模块 -->
+                    <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                        <span class="text-xs font-bold text-amber-400 block">🎁 福利兑换码</span>
+                        <div class="flex items-center space-x-2">
+                            <input id="input-redeem-code" type="text" placeholder="请输入兑换码" class="flex-1 min-w-0 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+                            <button id="btn-do-redeem" type="button" class="px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex-shrink-0 transition">兑换</button>
+                        </div>
+                    </div>
 
                     <!-- 视听反馈设置 -->
                     <div class="space-y-3">
@@ -2582,7 +2590,8 @@
 
             { id: 'ach_beyond_limit', name: '超越极限', tier: 'rainbow', cond: '在没通关后续关卡的情况下使用初阶职业通关剧情关卡～1地狱模式', bonusText: '速度+10，攻击力+20，防御力+5，生命+200', stats: { spd: 10, atk: 20, def: 5, hp: 200 } },
             { id: 'ach_cheater', name: '开挂了不起啊？', tier: 'rainbow', cond: '使用散人通关地狱模式', bonusText: '散人地狱专属炫彩称号', stats: {} },
-            { id: 'ach_genius', name: '难道你真的是天才？', tier: 'rainbow', cond: '使用初阶职业成功通关地狱模式', bonusText: '速度+5，攻击力+10，生命+100', stats: { spd: 5, atk: 10, hp: 100 } }
+            { id: 'ach_genius', name: '难道你真的是天才？', tier: 'rainbow', cond: '使用初阶职业成功通关地狱模式', bonusText: '速度+5，攻击力+10，生命+100', stats: { spd: 5, atk: 10, hp: 100 } },
+            { id: 'ach_insider', name: '内部玩家', tier: 'rainbow', hidden: true, isInsiderToggle: true, cond: '通过专属福利兑换码解锁', bonusText: '角色全属性 ×10（可随时开关；开启期间挑战/无限排行榜不记录成绩）', stats: {} }
         ];
 
         const state = {
@@ -2601,6 +2610,7 @@
             achievementStatsEnabled: true,
             activeSpecConversion: null, // 'ach_spec_spi' | 'ach_spec_def' | 'ach_spec_vit' | 'ach_spec_spd' | null
             highTierClassUnlocked: false,
+            insiderBuffEnabled: false,
             settings: { bgm: true, sfx: true, shake: true },
             bestiaryStatus: {},
             selectedMonsterId: null,
@@ -2678,6 +2688,7 @@
             state.achievementStatsEnabled = true;
             state.activeSpecConversion = null;
             state.highTierClassUnlocked = false;
+            state.insiderBuffEnabled = false;
         }
 
         function getAccountStorageKey(accName) {
@@ -2753,6 +2764,7 @@
                     if (parsed.achievementStatsEnabled !== undefined) state.achievementStatsEnabled = parsed.achievementStatsEnabled;
                     if (parsed.activeSpecConversion !== undefined) state.activeSpecConversion = parsed.activeSpecConversion;
                     if (parsed.highTierClassUnlocked !== undefined) state.highTierClassUnlocked = parsed.highTierClassUnlocked;
+                    if (parsed.insiderBuffEnabled !== undefined) state.insiderBuffEnabled = parsed.insiderBuffEnabled;
                 }
             } catch (e) {}
         }
@@ -2772,6 +2784,7 @@
                     achievementStatsEnabled: state.achievementStatsEnabled,
                     activeSpecConversion: state.activeSpecConversion,
                     highTierClassUnlocked: state.highTierClassUnlocked,
+                    insiderBuffEnabled: state.insiderBuffEnabled,
                     userAccount: state.userAccount
                 };
                 const key = getAccountStorageKey(state.userAccount);
@@ -4990,7 +5003,23 @@
                 atk += ms; def += ms; spd += ms; spi += ms; hit += ms; eva += ms;
             }
 
+            if (isInsiderBuffActive()) {
+                if (state.run) state.run.usedInsiderBuff = true;
+                maxHp *= 10;
+                maxMp *= 10;
+                atk *= 10;
+                def *= 10;
+                spd *= 10;
+                spi *= 10;
+                hit *= 10;
+                eva *= 10;
+            }
+
             return { maxHp, maxMp, atk, def, spd, spi, hit, eva };
+        }
+
+        function isInsiderBuffActive() {
+            return !!(state.unlockedAchievements && state.unlockedAchievements['ach_insider'] && state.insiderBuffEnabled && state.achievementStatsEnabled);
         }
 
         function respecPlayerStats(p) {
@@ -9487,6 +9516,7 @@
 
         function recordEndlessBestProgress(run) {
             if (!run || run.mode !== 'endless') return false;
+            if (run.usedInsiderBuff || isInsiderBuffActive()) return false;
             const diffId = run.difficultyId || state.selectedDifficultyId || 'normal';
             if (!state.challengeRecords) state.challengeRecords = {};
             if (!state.challengeRecords.endless) {
@@ -9589,6 +9619,12 @@
             run.battle = null;
             run.challengeEndReason = reasonText;
             run.phase = 'challenge_finished';
+            if (run.usedInsiderBuff || isInsiderBuffActive()) {
+                run.challengeEndReason = `${reasonText || '挑战结束'}（已开启【内部玩家】×10加成，本次成绩不计入排行榜）`;
+                showToast('⚡ 本局使用了【内部玩家】×10 加成，成绩不计入排行榜！');
+                renderRunView();
+                return;
+            }
 
             const diffId = run.difficultyId || state.selectedDifficultyId || 'normal';
             if (!state.challengeRecords) {
@@ -11273,11 +11309,14 @@
             const summaryEl = document.getElementById('achievement-summary-bar');
             const progressEl = document.getElementById('achievement-progress-text');
 
-            const unlockedCount = ACHIEVEMENTS.filter(a => state.unlockedAchievements[a.id]).length;
-            progressEl.textContent = `已解锁 ${unlockedCount} / ${ACHIEVEMENTS.length} · 属性无需佩戴自动生效`;
+            // 未解锁的隐藏成就完全不显示、也不计入总数
+            const visibleAchievements = ACHIEVEMENTS.filter(a => !a.hidden || state.unlockedAchievements[a.id]);
+            const unlockedCount = visibleAchievements.filter(a => state.unlockedAchievements[a.id]).length;
+            progressEl.textContent = `已解锁 ${unlockedCount} / ${visibleAchievements.length} · 属性无需佩戴自动生效`;
 
             const b = getAchievementBonusStats();
             const equippedHtml = getEquippedAchievementHtml() || '<span class="text-slate-500">未佩戴</span>';
+            const insiderOn = isInsiderBuffActive();
 
             summaryEl.innerHTML = `
                 <div class="flex items-center justify-between">
@@ -11293,19 +11332,25 @@
                 <div class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-300">
                     <span class="text-amber-400 font-bold">当前生效总加成：</span>
                     攻+${b.atk} | 速+${b.spd} | 防+${b.def} | 精+${b.spi} | 血+${b.hp} | 蓝+${b.mp} | 命+${b.hit} | 闪+${b.eva}
+                    ${insiderOn ? '<div class="mt-1 text-pink-400 font-black">⚡【内部玩家】全属性 ×10 生效中（挑战/无限榜不记录成绩）</div>' : ''}
                 </div>
             `;
 
             document.getElementById('btn-toggle-ach-stats').onclick = () => {
                 playClickSfx();
                 state.achievementStatsEnabled = !state.achievementStatsEnabled;
+                if (state.run && state.run.player) {
+                    const nd = computePlayerDerived(state.run.player);
+                    state.run.player.hp = Math.min(state.run.player.hp, nd.maxHp);
+                    state.run.player.mp = Math.min(state.run.player.mp, nd.maxMp);
+                }
                 savePersistedGameData();
                 renderAchievementModal();
                 if (state.run) renderRunView();
             };
 
             listEl.innerHTML = '';
-            ACHIEVEMENTS.forEach(ach => {
+            visibleAchievements.forEach(ach => {
                 const isUnlocked = !!state.unlockedAchievements[ach.id];
                 const isEquipped = state.equippedAchievementId === ach.id;
                 const st = getAchievementTierStyle(ach.tier);
@@ -11325,7 +11370,19 @@
 
                 let rightBtnHtml = `<span class="text-xs text-slate-600 font-bold">🔒 未解锁</span>`;
                 if (isUnlocked) {
-                    if (ach.isSpec) {
+                    if (ach.isInsiderToggle) {
+                        const isOn = !!state.insiderBuffEnabled;
+                        rightBtnHtml = `
+                            <div class="flex flex-col space-y-1 flex-shrink-0">
+                                <button id="btn-toggle-insider-buff" class="px-2.5 py-1 rounded-lg text-[11px] font-black ${
+                                    isOn ? 'bg-pink-500 text-slate-950 shadow' : 'bg-slate-800 text-pink-300 border border-pink-500/40'
+                                }">${isOn ? '×10生效中 ✓' : '开启 ×10'}</button>
+                                <button data-equip="${ach.id}" class="btn-ach-equip px-2.5 py-1 rounded-lg text-[10px] font-bold ${
+                                    isEquipped ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+                                }">${isEquipped ? '已佩戴 ✓' : '佩戴'}</button>
+                            </div>
+                        `;
+                    } else if (ach.isSpec) {
                         const isSpecOn = state.activeSpecConversion === ach.id;
                         rightBtnHtml = `
                             <div class="flex flex-col space-y-1 flex-shrink-0">
@@ -11360,6 +11417,32 @@
                 `;
                 listEl.appendChild(card);
             });
+
+            const insiderBtn = document.getElementById('btn-toggle-insider-buff');
+            if (insiderBtn) {
+                insiderBtn.onclick = () => {
+                    playClickSfx();
+                    state.insiderBuffEnabled = !state.insiderBuffEnabled;
+                    if (state.run && state.run.player) {
+                        const p = state.run.player;
+                        const nd = computePlayerDerived(p);
+                        if (state.insiderBuffEnabled) {
+                            state.run.usedInsiderBuff = true;
+                            p.hp = nd.maxHp;
+                            p.mp = nd.maxMp;
+                        } else {
+                            p.hp = Math.min(p.hp, nd.maxHp);
+                            p.mp = Math.min(p.mp, nd.maxMp);
+                        }
+                    }
+                    savePersistedGameData();
+                    renderAchievementModal();
+                    if (state.run) renderRunView();
+                    showToast(state.insiderBuffEnabled
+                        ? '⚡ 已开启【内部玩家】全属性 ×10（开启期间挑战/无限榜不记录成绩）！'
+                        : '✅ 已关闭【内部玩家】×10 加成，恢复正常排行榜计分！');
+                };
+            }
 
             listEl.querySelectorAll('.btn-ach-equip').forEach(btn => {
                 btn.onclick = () => {
@@ -14249,7 +14332,7 @@
                     closeModal();
                     renderAccountUI();
                     savePersistedGameData(false);
-                    showToast(`✅ 游戏昵称已设置为【${name}】，排行榜已同步！`); }; } }  function renderAccountUI() { bindNicknameModalEvents(); const statusDot = document.getElementById('status-dot'); const statusText = document.getElementById('account-status-text'); const titleRow = document.getElementById('account-title-row'); const modalBadge = document.getElementById('modal-login-badge'); const loginForm = document.getElementById('login-form-area'); const loggedInArea = document.getElementById('logged-in-area'); const loggedInName = document.getElementById('logged-in-name');  const badgeHtml = getEquippedAchievementHtml(); if (titleRow) { titleRow.innerHTML = badgeHtml \vert{}\vert{} '<span class="text-[10px] text-slate-600">未佩戴称号</span>'; }  if (state.userAccount) { const shownName = getPlayerDisplayName(); statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0'; statusText.textContent = `已登录：${shownName}`;
+                    showToast(`✅ 游戏昵称已设置为【${name}】，排行榜已同步！`); }; } }  function renderAccountUI() { bindNicknameModalEvents(); const statusDot = document.getElementById('status-dot'); const statusText = document.getElementById('account-status-text'); const titleRow = document.getElementById('account-title-row'); const modalBadge = document.getElementById('modal-login-badge'); const loginForm = document.getElementById('login-form-area'); const loggedInArea = document.getElementById('logged-in-area'); const loggedInName = document.getElementById('logged-in-name');  const badgeHtml = getEquippedAchievementHtml(); if (titleRow) { titleRow.innerHTML = badgeHtml || '<span class="text-[10px] text-slate-600">未佩戴称号</span>'; }  if (state.userAccount) { const shownName = getPlayerDisplayName(); statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0'; statusText.textContent = `已登录：${shownName}`;
                 modalBadge.textContent = '已登录';
                 modalBadge.className = 'text-[11px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/50';
                 loginForm.classList.add('hidden');
@@ -14580,6 +14663,37 @@
                 state.settings.shake = !state.settings.shake;
                 updateToggleUI('toggle-shake', state.settings.shake);
             };
+            const redeemBtn = document.getElementById('btn-do-redeem');
+            if (redeemBtn) {
+                redeemBtn.onclick = () => {
+                    const inp = document.getElementById('input-redeem-code');
+                    const code = (inp ? inp.value : '').trim().toLowerCase();
+                    if (!code) return showToast('请输入兑换码');
+
+                    if (code === 'huolong666') {
+                        playBattleSfx('levelup');
+                        if (inp) inp.value = '';
+                        if (state.unlockedAchievements['ach_insider']) {
+                            showToast('🎉 您已解锁隐藏成就【内部玩家】，可在【🏆 成就】中随时开关 ×10 加成！');
+                            return;
+                        }
+                        state.unlockedAchievements['ach_insider'] = true;
+                        state.insiderBuffEnabled = true;
+                        if (state.run && state.run.player) {
+                            state.run.usedInsiderBuff = true;
+                            const nd = computePlayerDerived(state.run.player);
+                            state.run.player.hp = nd.maxHp;
+                            state.run.player.mp = nd.maxMp;
+                            renderRunView();
+                        }
+                        savePersistedGameData();
+                        showToast('🎉 兑换成功！解锁隐藏炫彩成就【内部玩家】（全属性 ×10 已开启，挑战榜不计分）！');
+                    } else {
+                        playClickSfx();
+                        showToast('❌ 无效的兑换码，请检查是否输入正确');
+                    }
+                };
+            }
         };
     </script>
     <script type="module">
