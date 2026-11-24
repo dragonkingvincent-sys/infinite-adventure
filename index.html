@@ -764,12 +764,15 @@
     <span>🌐 使用 Google 账号一键登录</span>
 </button>
                         </div>
-                        <div id="logged-in-area" class="hidden flex items-center justify-between pt-1">
-                            <div>
-                                <p class="text-xs text-slate-200 font-semibold" id="logged-in-name">玩家账号</p>
+                        <div id="logged-in-area" class="hidden flex items-center justify-between pt-1 gap-2">
+                            <div class="min-w-0">
+                                <p class="text-xs text-slate-200 font-semibold truncate" id="logged-in-name">玩家账号</p>
                                 <p class="text-[11px] text-emerald-400">当前已登录</p>
                             </div>
-                            <button id="btn-do-logout" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/80 hover:text-rose-300 border border-slate-700 text-xs text-slate-300 transition">退出登录</button>
+                            <div class="flex items-center space-x-1.5 flex-shrink-0">
+                                <button id="btn-open-nickname" type="button" class="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-xs text-amber-300 font-bold transition">✏️ 改名</button>
+                                <button id="btn-do-logout" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/80 hover:text-rose-300 border border-slate-700 text-xs text-slate-300 transition">退出登录</button>
+                            </div>
                         </div>
                     </div>
 
@@ -901,6 +904,23 @@
 
                 <!-- 排行榜列表容器 -->
                 <div id="leaderboard-list" class="scroll-container flex-1 overflow-y-auto p-4 space-y-2.5">
+                </div>
+            </div>
+        </div>
+        <!-- 【自定义游戏昵称】弹窗（Google 登录首次自动弹出，也可在设置里随时改名） -->
+        <div id="nickname-modal" class="fixed inset-0 bg-black/80 z-[55] hidden flex items-center justify-center p-5">
+            <div class="w-full max-w-sm bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl overflow-hidden">
+                <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950">
+                    <h2 class="text-sm font-black text-amber-400">✏️ 设置你的游戏昵称</h2>
+                    <button id="btn-close-nickname" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">✕</button>
+                </div>
+                <div class="p-5 space-y-3.5">
+                    <p class="text-xs text-slate-300 leading-relaxed">该昵称将显示在游戏首页和全服联机排行榜中（不会公开你的 Google 真实姓名）。</p>
+                    <input id="input-nickname" type="text" maxlength="16" placeholder="请输入 2~16 字游戏昵称" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button id="btn-cancel-nickname" type="button" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">暂不修改</button>
+                        <button id="btn-save-nickname" type="button" class="py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black transition shadow">确认保存</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -14162,28 +14182,79 @@
             stageBadge.textContent = `当前关卡：${currentStage.name}`;
         }
 
-        function renderAccountUI() {
-            const statusDot = document.getElementById('status-dot');
-            const statusText = document.getElementById('account-status-text');
-            const titleRow = document.getElementById('account-title-row');
-            const modalBadge = document.getElementById('modal-login-badge');
-            const loginForm = document.getElementById('login-form-area');
-            const loggedInArea = document.getElementById('logged-in-area');
-            const loggedInName = document.getElementById('logged-in-name');
+        function getNicknameStorageKey(acc) {
+            return acc ? ('RG_NICKNAME_' + encodeURIComponent(acc)) : '';
+        }
 
-            const badgeHtml = getEquippedAchievementHtml();
-            if (titleRow) {
-                titleRow.innerHTML = badgeHtml || '<span class="text-[10px] text-slate-600">未佩戴称号</span>';
+        function getPlayerDisplayName() {
+            if (!state.userAccount) return '';
+            if (state.playerNickname) return state.playerNickname;
+            try {
+                const saved = localStorage.getItem(getNicknameStorageKey(state.userAccount));
+                if (saved && saved.trim()) {
+                    state.playerNickname = saved.trim();
+                    return state.playerNickname;
+                }
+            } catch (e) {}
+            if (state.isGoogleUser) {
+                return '冒险者_' + (state.googleUid ? state.googleUid.slice(-4) : '0000');
             }
+            return state.userAccount;
+        }
 
-            if (state.userAccount) {
-                statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0';
-                statusText.textContent = `已登录：${state.userAccount}`;
+        function openNicknameModal(isFirstLogin = false) {
+            const modal = document.getElementById('nickname-modal');
+            const inp = document.getElementById('input-nickname');
+            if (!modal || !inp) return;
+            inp.value = state.playerNickname || '';
+            modal.classList.remove('hidden');
+            setTimeout(() => inp.focus(), 80);
+            if (isFirstLogin) {
+                showToast('👋 欢迎加入！请先取一个排行榜显示用的游戏昵称');
+            }
+        }
+
+        function bindNicknameModalEvents() {
+            if (window.__nicknameEventsBound) return;
+            window.__nicknameEventsBound = true;
+
+            const modal = document.getElementById('nickname-modal');
+            const inp = document.getElementById('input-nickname');
+            const closeModal = () => modal && modal.classList.add('hidden');
+
+            const openBtn = document.getElementById('btn-open-nickname');
+            if (openBtn) openBtn.onclick = () => {
+                playClickSfx();
+                openNicknameModal(false);
+            };
+            const closeBtn = document.getElementById('btn-close-nickname');
+            if (closeBtn) closeBtn.onclick = closeModal;
+            const cancelBtn = document.getElementById('btn-cancel-nickname');
+            if (cancelBtn) cancelBtn.onclick = closeModal;
+
+            const saveBtn = document.getElementById('btn-save-nickname');
+            if (saveBtn) {
+                saveBtn.onclick = () => {
+                    const name = (inp ? inp.value : '').trim();
+                    if (name.length < 2 || name.length > 16) {
+                        return showToast('昵称长度需为 2～16 个字符！');
+                    }
+                    playClickSfx();
+                    state.playerNickname = name;
+                    try {
+                        if (state.userAccount) {
+                            localStorage.setItem(getNicknameStorageKey(state.userAccount), name);
+                        }
+                    } catch (e) {}
+                    closeModal();
+                    renderAccountUI();
+                    savePersistedGameData(false);
+                    showToast(`✅ 游戏昵称已设置为【${name}】，排行榜已同步！`); }; } }  function renderAccountUI() { bindNicknameModalEvents(); const statusDot = document.getElementById('status-dot'); const statusText = document.getElementById('account-status-text'); const titleRow = document.getElementById('account-title-row'); const modalBadge = document.getElementById('modal-login-badge'); const loginForm = document.getElementById('login-form-area'); const loggedInArea = document.getElementById('logged-in-area'); const loggedInName = document.getElementById('logged-in-name');  const badgeHtml = getEquippedAchievementHtml(); if (titleRow) { titleRow.innerHTML = badgeHtml \vert{}\vert{} '<span class="text-[10px] text-slate-600">未佩戴称号</span>'; }  if (state.userAccount) { const shownName = getPlayerDisplayName(); statusDot.className = 'w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0'; statusText.textContent = `已登录：${shownName}`;
                 modalBadge.textContent = '已登录';
                 modalBadge.className = 'text-[11px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700/50';
                 loginForm.classList.add('hidden');
                 loggedInArea.classList.remove('hidden');
-                loggedInName.textContent = state.userAccount;
+                loggedInName.textContent = shownName;
             } else {
                 statusDot.className = 'w-2 h-2 rounded-full bg-slate-500 flex-shrink-0';
                 statusText.textContent = '未登录（游客模式）';
@@ -14614,9 +14685,21 @@
 
             onAuthStateChanged(auth, async (user) => {
                 if (user && !user.isAnonymous) {
-                    const displayName = user.displayName || user.email || 'Google玩家';
-                    state.userAccount = displayName;
-                    loadSpecificAccountProgress(displayName);
+                    const accountKey = user.displayName || user.email || ('google_' + user.uid.slice(-6));
+                    state.userAccount = accountKey;
+                    state.isGoogleUser = true;
+                    state.googleUid = user.uid;
+                    state.playerNickname = null;
+                    loadSpecificAccountProgress(accountKey);
+
+                    let needSetNickname = true;
+                    try {
+                        const savedLocalNick = localStorage.getItem(getNicknameStorageKey(accountKey));
+                        if (savedLocalNick && savedLocalNick.trim()) {
+                            state.playerNickname = savedLocalNick.trim();
+                            needSetNickname = false;
+                        }
+                    } catch (e) {}
 
                     try {
                         const userDocRef = doc(db, 'users', user.uid);
@@ -14627,7 +14710,6 @@
                             if (data.bestiaryStatus) Object.assign(state.bestiaryStatus, data.bestiaryStatus);
                             if (data.unlockedAchievements) Object.assign(state.unlockedAchievements, data.unlockedAchievements);
                             if (data.stageClearRecords) Object.assign(state.stageClearRecords, data.stageClearRecords);
-                            // 择优合并云端与本地挑战记录，绝不丢失高分
                             state.challengeRecords = mergeBestChallengeRecords(state.challengeRecords, data.challengeRecords || {
                                 damage: { maxDamage: data.damageMax || 0, bestRounds: data.damageRounds || 0, maxStage: data.damageStage || 1, diffId: data.damageDiff || 'normal' },
                                 survival: { maxRounds: data.survivalRounds || 0, totalDamageTaken: data.survivalDamageTaken || 0, maxStage: data.survivalStage || 1, diffId: data.survivalDiff || 'normal' }
@@ -14638,17 +14720,26 @@
                             if (data.highTierClassUnlocked !== undefined) {
                                 state.highTierClassUnlocked = !!data.highTierClassUnlocked;
                             }
+                            if (data.playerNickname && data.playerNickname.trim()) {
+                                state.playerNickname = data.playerNickname.trim();
+                                try { localStorage.setItem(getNicknameStorageKey(accountKey), state.playerNickname); } catch (e) {}
+                                needSetNickname = false;
+                            }
                             savePersistedGameData(true);
                         } else {
                             savePersistedGameData(false);
                         }
                     } catch (e) {
-                        loadSpecificAccountProgress(displayName);
+                        loadSpecificAccountProgress(accountKey);
                     }
 
                     renderAccountUI();
                     renderStageList();
-                    showToast(`🎉 欢迎回来，${displayName}！`);
+                    if (needSetNickname) {
+                        openNicknameModal(true);
+                    } else {
+                        showToast(`🎉 欢迎回来，${getPlayerDisplayName()}！`);
+                    }
                 }
             });
 
@@ -14686,6 +14777,9 @@
             window.__doCloudLogout = async () => {
                 try { await signOut(auth); } catch (e) {}
                 state.userAccount = null;
+                state.playerNickname = null;
+                state.isGoogleUser = false;
+                state.googleUid = null;
                 document.getElementById('input-password').value = '';
                 try { localStorage.setItem('RG_CURRENT_USER', ''); } catch (e) {}
                 resetPlayerProgressState();
@@ -14700,7 +14794,7 @@
                 const user = await ensureCloudAuth();
                 if (!user) return;
                 try {
-                    const playerName = state.userAccount;
+                    const playerName = getPlayerDisplayName();
                     const docId = (!user.isAnonymous)
                         ? user.uid
                         : `acc_${encodeURIComponent(state.userAccount)}`;
@@ -14729,6 +14823,7 @@
 
                     await setDoc(userDocRef, {
                         playerName,
+                        playerNickname: state.playerNickname || null,
                         unlockedClasses: payload.unlockedClasses || {},
                         bestiaryStatus: payload.bestiaryStatus || {},
                         unlockedAchievements: payload.unlockedAchievements || {},
@@ -15004,7 +15099,10 @@
                     survival: { maxRounds: 0, totalDamageTaken: 0, maxStage: 0, diffId: 'normal', byDiff: {} },
                     endless: { maxFloor: 0, diffId: 'normal', byDiff: {} }
                 };
-                const myName = state.userAccount || '未登录游客（仅本地预览）';
+                const myName = state.userAccount ? getPlayerDisplayName() : '未登录游客（仅本地预览）';
+                const myCloudDocId = (auth.currentUser && !auth.currentUser.isAnonymous)
+                    ? auth.currentUser.uid
+                    : (state.userAccount ? `acc_${encodeURIComponent(state.userAccount)}` : null);
 
                 const playersMap = new Map();
                 playersMap.set('ME_LOCAL', {
@@ -15056,7 +15154,7 @@
                             endless: { maxFloor: eFl, diffId: eDiff, byDiff: {} }
                         };
 
-                        const isCurrentUser = state.userAccount && pName === state.userAccount;
+                        const isCurrentUser = (myCloudDocId && docSnap.id === myCloudDocId) || (state.userAccount && pName === myName);
                         if (isCurrentUser) {
                             const bestMergedChal = mergeBestChallengeRecords(myChal, cloudChalObj);
                             state.challengeRecords = bestMergedChal;
