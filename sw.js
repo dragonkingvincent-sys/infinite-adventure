@@ -1,4 +1,4 @@
-const CACHE_NAME = 'infinite-adventure-v22';
+const CACHE_NAME = 'infinite-adventure-v23';
 const CORE_ASSETS = [
   './',
   './index.html',
