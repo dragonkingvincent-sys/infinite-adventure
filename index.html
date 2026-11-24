@@ -4099,7 +4099,8 @@
                     }
                 } else if (ELITE_SUPERIOR_BOSS_MAP[monsterId]) {
                     monsterId = ELITE_SUPERIOR_BOSS_MAP[monsterId];
-                    skipHellPromotion = true;
+                } else if (BOSS_SUPERIOR_HERO_MAP[monsterId]) {
+                    monsterId = BOSS_SUPERIOR_HERO_MAP[monsterId];
                 }
             }
 
@@ -4525,13 +4526,6 @@
                 spd = Math.max(1, Math.round(spd * dailySpdMult));
             }
 
-            if (state.selectedDifficultyId === 'hell' && !skipHellPromotion) {
-                if (tier === '首领') {
-                    tier = '英雄';
-                    name = name.replace('（首领）', '（英雄）');
-                }
-            }
-
             // 地狱难度专属：所有【英雄】级怪物变回原本属性（当前折半属性的 2 倍，精神强度等全属性×2）
             if (state.selectedDifficultyId === 'hell' && tier === '英雄') {
                 hp *= 2;
@@ -4761,6 +4755,7 @@
                 bonusAtk: 0,
                 bonusDef: 0,
                 bonusSpd: 0,
+                bonusSpi: 0,
                 expMultBonus: 0,
                 spdPctBonus: 0,
                 ignoreSkillClassLimit: cls.id === 'wanfa_tianzun',
@@ -4800,7 +4795,7 @@
             let atk = cls.base.atk + p.bonusAtk + achBonus.atk;
             let def = cls.base.def + (p.bonusDef || 0) + achBonus.def;
             let spd = cls.base.spd + (p.bonusSpd || 0) + achBonus.spd;
-            let spi = cls.base.spi + achBonus.spi;
+            let spi = cls.base.spi + (p.bonusSpi || 0) + achBonus.spi;
             let hit = cls.base.hit + prophetHit + achBonus.hit;
             let eva = cls.base.eva + achBonus.eva;
 
@@ -5230,16 +5225,16 @@
         }
         
         function calcMonsterReward(playerLevel, monsterLevel, tier) {
-            let baseCoins = 10 * monsterLevel;
+            let baseCoins = Math.min(100, 10 * monsterLevel);
             let baseExp = 10;
             if (tier === '精英' || tier === '精英护卫') {
-                baseCoins = 20 * monsterLevel;
+                baseCoins = Math.min(200, 20 * monsterLevel);
                 baseExp = 30;
             } else if (tier === '首领' || tier === '终极首领') {
-                baseCoins = 50 * monsterLevel;
+                baseCoins = Math.min(500, 50 * monsterLevel);
                 baseExp = 50;
             } else if (tier === '英雄') {
-                baseCoins = 1000 * monsterLevel;
+                baseCoins = Math.min(5000, 1000 * monsterLevel);
                 baseExp = 500;
             }
 
@@ -8563,7 +8558,7 @@
                     const rawCounter = Math.round(target.def * (target.demonKingCounterMult || 1.0));
                     const counterDmg = calcDamageWithDefense(rawCounter, effDef, false, 1.0);
                     const actual = applyIncomingDamageToPlayer(battle, counterDmg, target);
-                    addBattleLog(battle, `?? 【${target.name}】触发【憋屈】反击（防御×${target.demonKingCounterMult || 1}），对你造成 ${actual} 点伤害！`);
+                    addBattleLog(battle, `👑 【${target.name}】触发【憋屈】反击（防御×${target.demonKingCounterMult || 1}），对你造成 ${actual} 点伤害！`);
                     setTimeout(() => {
                         playBattleSfx('counter');
                         triggerMonsterCardVisual(target.uid, 'monster-lunge-anim', '<span class="bg-rose-950 text-amber-300 border-rose-400">👑 憋屈反击！</span>');
@@ -11064,7 +11059,7 @@
                             const needed = Math.ceil(p.maxExp / (1 + (p.expMultBonus || 0) / 100));
                             gainExp(p, needed);
                         }
-                        totalCoins += 1000 * m.level;
+                        totalCoins += Math.min(5000, 1000 * m.level);
                     } else {
                         const rw = calcMonsterReward(p.level, m.level, m.tier);
                         totalExp += rw.exp;
@@ -12338,7 +12333,7 @@
 
                     <div class="p-2.5 rounded-xl bg-slate-950 border border-amber-500/40 space-y-2">
                         <div>
-                            <p class="font-bold text-amber-400">📕 技能破限书（500 铜币）</p>
+                            <p class="font-bold text-amber-400">📕 技能破限书（2000 铜币）</p>
                             <p class="text-[10px] text-slate-400">点击下方任意已学技能，使其等级上限+1并直接升 1 级！</p>
                         </div>
                         <div class="grid grid-cols-2 gap-1.5">
@@ -12428,12 +12423,12 @@
 
             box.querySelectorAll('.btn-town-limit-break').forEach(btn => {
                 btn.onclick = () => {
-                    if (p.coins < 500) return showToast('铜币不足 500');
+                    if (p.coins < 2000) return showToast('铜币不足 2000');
                     const skId = btn.getAttribute('data-town-lb');
                     const sk = p.learnedSkills.find(s => s.id === skId);
                     if (!sk) return;
                     playClickSfx();
-                    p.coins -= 500;
+                    p.coins -= 2000;
                     const baseCap = getClassConfig(p.classId).isHighTier ? 15 : ((ALL_SKILLS[sk.id] && ALL_SKILLS[sk.id].isAdvSkill) ? 6 : 3);
                     sk.maxCap = Math.max(baseCap, sk.maxCap || baseCap) + 1;
                     sk.level += 1;
@@ -12594,7 +12589,7 @@
 
                     <div class="p-2.5 rounded-xl bg-slate-950 border border-amber-500/40 space-y-2">
                         <div>
-                            <p class="font-bold text-amber-400">📕 技能破限书（500 铜币）</p>
+                            <p class="font-bold text-amber-400">📕 技能破限书（2000 铜币）</p>
                             <p class="text-[10px] text-slate-400">点击下方任意已学技能，使其等级上限+1并直接升 1 级！</p>
                         </div>
                         <div class="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto scroll-container">
@@ -12669,12 +12664,12 @@
 
             box.querySelectorAll('.btn-sanc-limit-break').forEach(btn => {
                 btn.onclick = () => {
-                    if (p.coins < 500) return showToast('铜币不足 500');
+                    if (p.coins < 2000) return showToast('铜币不足 ，2000');
                     const skId = btn.getAttribute('data-sanc-lb');
                     const sk = p.learnedSkills.find(s => s.id === skId);
                     if (!sk) return;
                     playClickSfx();
-                    p.coins -= 500;
+                    p.coins -= 2000;
                     const curCap = getSkillMaxLevelCap(p, sk);
                     const baseCap = getClassConfig(p.classId).isHighTier ? 15 : ((ALL_SKILLS[sk.id] && ALL_SKILLS[sk.id].isAdvSkill) ? 6 : 3);
                     sk.maxCap = Math.max(baseCap, sk.maxCap || baseCap) + 1;
@@ -13288,11 +13283,6 @@
                 upper.appendChild(card);
                 document.getElementById('btn-rest-hp').onclick = () => { playClickSfx(); settleCurrentStageEvent('hp'); };
                 document.getElementById('btn-rest-mp').onclick = () => { playClickSfx(); settleCurrentStageEvent('mp'); };
-        // =====================================================================
-        // 第二小处：在 renderEventOrSettledStage 函数内（约第 4095 行）
-        // 搜索 } else if (ev.type === 'shop') {
-        // 在这行正上方插入以下【异界特化商店】界面与交互代码：
-        // =====================================================================
             } else if (ev.type === 'otherworld_shop') {
                 card.innerHTML = `
                     <h3 class="text-sm font-black text-purple-400">🌌 ${ev.title} · 【异界特化商店】</h3>
@@ -13301,7 +13291,7 @@
                         <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-purple-500/40">
                             <div>
                                 <p class="font-bold text-rose-400">🍷 高级红药 / 高级蓝药（各 200 铜币）</p>
-                                <p class="text-[10px] text-slate-400">购买后立即回满 100% 生命值 或 100% ${p.energyName || '蓝量'}</p>
+                                <p class="text-[10px] text-slate-400">购买后存入背包，随时回满 100% 生命值 或 100% ${p.energyName || '蓝量'}</p>
                             </div>
                             <div class="space-x-1.5 flex-shrink-0">
                                 <button id="ow-buy-hred" class="px-2.5 py-1.5 rounded-lg bg-rose-500 text-slate-950 font-black">买高红(200)</button>
@@ -13311,7 +13301,7 @@
                         <div class="p-2.5 rounded-xl bg-slate-950 border border-amber-500/40 space-y-2">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="font-bold text-amber-400">📕 技能破限书（500 铜币）</p>
+                                    <p class="font-bold text-amber-400">📕 技能破限书（2000 铜币）</p>
                                     <p class="text-[10px] text-slate-400">点击下方任意已学技能，使其等级上限+1并直接升 1 级！</p>
                                 </div>
                             </div>
@@ -13319,21 +13309,22 @@
                                 ${p.learnedSkills.length > 0 ? p.learnedSkills.map(sk => `
                                     <button data-lb-sk="${sk.id}" class="btn-ow-limit-break p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-left text-[11px]">
                                         <span class="font-black text-amber-300">【${getFormattedSkillName(p, sk.id, sk.name)}】</span>
-                                        <span class="text-emerald-400 block text-[10px]">Lv.${sk.level} → Lv.${sk.level + 1} (500🪙)</span>
+                                        <span class="text-emerald-400 block text-[10px]">Lv.${sk.level} → Lv.${sk.level + 1} (2000🪙)</span>
                                     </button>
                                 `).join('') : '<span class="text-[11px] text-slate-500 col-span-2">暂未学习任何技能</span>'}
                             </div>
                         </div>
                         <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                            <p class="font-bold text-emerald-400 text-[11px]">⚡ 异界永久属性强化（每项 1000 铜币）</p>
+                            <p class="font-bold text-emerald-400 text-[11px]">⚡ 异界永久属性强化（每项 2000 铜币）</p>
                             <div class="grid grid-cols-3 gap-1.5">
                                 <button id="ow-buy-atk" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-rose-500/40 text-rose-300 font-bold text-[11px]">攻击+30</button>
                                 <button id="ow-buy-def" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-sky-500/40 text-sky-300 font-bold text-[11px]">防御+30</button>
                                 <button id="ow-buy-spd" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 font-bold text-[11px]">速度+30</button>
                             </div>
-                            <div class="grid grid-cols-2 gap-1.5">
-                                <button id="ow-buy-hp" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-rose-500/40 text-rose-300 font-bold text-[11px]">生命上限+300</button>
-                                <button id="ow-buy-mp" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-sky-500/40 text-sky-300 font-bold text-[11px]">${p.energyName || '蓝量'}上限+300</button>
+                            <div class="grid grid-cols-3 gap-1.5">
+                                <button id="ow-buy-spi" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-purple-500/40 text-purple-300 font-bold text-[11px]">精神+30</button>
+                                <button id="ow-buy-hp" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-rose-500/40 text-rose-300 font-bold text-[11px]">生命+300</button>
+                                <button id="ow-buy-mp" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-sky-500/40 text-sky-300 font-bold text-[11px]">${p.energyName || '蓝量'}+300</button>
                             </div>
                         </div>
                         ${buildSellSkillBooksHtml(p)}
@@ -13358,42 +13349,47 @@
                 };
                 card.querySelectorAll('.btn-ow-limit-break').forEach(btn => {
                     btn.onclick = () => {
-                        if (p.coins < 500) return showToast('铜币不足 500');
+                        if (p.coins < 2000) return showToast('铜币不足 2000');
                         const skId = btn.getAttribute('data-lb-sk');
                         const sk = p.learnedSkills.find(s => s.id === skId);
                         if (!sk) return;
                         playClickSfx();
-                        p.coins -= 500;
-                    const baseCap = getClassConfig(p.classId).isHighTier ? 15 : ((ALL_SKILLS[sk.id] && ALL_SKILLS[sk.id].isAdvSkill) ? 6 : 3);
-                    sk.maxCap = Math.max(baseCap, sk.maxCap || baseCap) + 1;
-                    sk.level += 1;
+                        p.coins -= 2000;
+                        const baseCap = getClassConfig(p.classId).isHighTier ? 15 : ((ALL_SKILLS[sk.id] && ALL_SKILLS[sk.id].isAdvSkill) ? 6 : 3);
+                        sk.maxCap = Math.max(baseCap, sk.maxCap || baseCap) + 1;
+                        sk.level += 1;
                         showToast(`📕 技能破限成功！【${getFormattedSkillName(p, sk.id, sk.name)}】等级上限+1并直接升至 Lv.${sk.level}！`);
                         renderRunView();
                     };
                 });
                 document.getElementById('ow-buy-atk').onclick = () => {
-                    if (p.coins < 1000) return showToast('铜币不足 1000');
-                    playClickSfx(); p.coins -= 1000; p.bonusAtk += 30;
+                    if (p.coins < 2000) return showToast('铜币不足 2000');
+                    playClickSfx(); p.coins -= 2000; p.bonusAtk += 30;
                     showToast('⚡ 异界强化成功：永久攻击力 +30！'); renderRunView();
                 };
                 document.getElementById('ow-buy-def').onclick = () => {
-                    if (p.coins < 1000) return showToast('铜币不足 1000');
-                    playClickSfx(); p.coins -= 1000; p.bonusDef = (p.bonusDef || 0) + 30;
+                    if (p.coins < 2000) return showToast('铜币不足 2000');
+                    playClickSfx(); p.coins -= 2000; p.bonusDef = (p.bonusDef || 0) + 30;
                     showToast('🛡️ 异界强化成功：永久防御力 +30！'); renderRunView();
                 };
                 document.getElementById('ow-buy-spd').onclick = () => {
-                    if (p.coins < 1000) return showToast('铜币不足 1000');
-                    playClickSfx(); p.coins -= 1000; p.bonusSpd = (p.bonusSpd || 0) + 30;
+                    if (p.coins < 2000) return showToast('铜币不足 2000');
+                    playClickSfx(); p.coins -= 2000; p.bonusSpd = (p.bonusSpd || 0) + 30;
                     showToast('💨 异界强化成功：永久速度 +30！'); renderRunView();
                 };
+                document.getElementById('ow-buy-spi').onclick = () => {
+                    if (p.coins < 2000) return showToast('铜币不足 2000');
+                    playClickSfx(); p.coins -= 2000; p.bonusSpi = (p.bonusSpi || 0) + 30;
+                    showToast('🔮 异界强化成功：永久精神强度 +30！'); renderRunView();
+                };
                 document.getElementById('ow-buy-hp').onclick = () => {
-                    if (p.coins < 1000) return showToast('铜币不足 1000');
-                    playClickSfx(); p.coins -= 1000; p.bonusHp += 300; p.hp += 300;
+                    if (p.coins < 2000) return showToast('铜币不足 2000');
+                    playClickSfx(); p.coins -= 2000; p.bonusHp += 300; p.hp += 300;
                     showToast('❤️ 异界强化成功：永久生命上限 +300！'); renderRunView();
                 };
                 document.getElementById('ow-buy-mp').onclick = () => {
-                    if (p.coins < 1000) return showToast('铜币不足 1000');
-                    playClickSfx(); p.coins -= 1000; p.bonusMp = (p.bonusMp || 0) + 300; p.mp += 300;
+                    if (p.coins < 2000) return showToast('铜币不足 2000');
+                    playClickSfx(); p.coins -= 2000; p.bonusMp = (p.bonusMp || 0) + 300; p.mp += 300;
                     showToast(`💧 异界强化成功：永久${p.energyName || '蓝量'}上限 +300！`); renderRunView();
                 };
                 card.querySelectorAll('.btn-sell-book').forEach(btn => {
@@ -13417,7 +13413,7 @@
                         </div>
                         <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-800">
                             <div>
-                                <p class="font-bold text-rose-400">⚔️ 武器附魔（100 铜币）</p>
+                                <p class="font-bold text-rose-400">⚔️ 武器附魔（300 铜币）</p>
                                 <p class="text-[10px] text-slate-400">永久攻击力 +5</p>
                             </div>
                             <button id="shop-buy-enchant" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-black">附魔</button>
@@ -13446,9 +13442,9 @@
                     renderRunView();
                 };
                 document.getElementById('shop-buy-enchant').onclick = () => {
-                    if (p.coins < 100) return showToast('铜币不足 100');
+                    if (p.coins < 300) return showToast('铜币不足 300');
                     playClickSfx();
-                    p.coins -= 100;
+                    p.coins -= 300;
                     p.bonusAtk += 5;
                     showToast('附魔成功！永久攻击力 +5');
                     renderRunView();
