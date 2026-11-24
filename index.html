@@ -12254,28 +12254,39 @@
             const box = document.createElement('div');
             box.className = 'space-y-3';
 
-            const advClasses = CLASSES.filter(c => c.isAdvanced && (p.classId === 'freelancer' || c.baseClassId === p.classId || p.classId === c.id));
+            // 仅显示当前初阶职业对应的进阶职业（或已转职的当前进阶职业），散人不再显示进阶职业
+            const advClasses = CLASSES.filter(c => c.isAdvanced && (c.baseClassId === p.classId || p.classId === c.id));
             const freelancerCls = getClassConfig('freelancer');
 
             const advCardsHtml = [...advClasses, freelancerCls].map(cls => {
                 const isCurrent = p.classId === cls.id;
                 const isUnlocked = !!state.unlockedClasses[cls.id];
                 const baseClsName = cls.baseClassId ? getClassConfig(cls.baseClassId).name : '通用';
+                const canTransferAdv = !cls.isAdvanced || (p.classId === cls.baseClassId && p.level >= 20);
+
+                let btnText = cls.isAdvanced ? '免费进阶转职' : '免费转为散人';
+                let btnClass = 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 shadow';
+                if (isCurrent) {
+                    btnText = '当前职业';
+                    btnClass = 'bg-slate-800 text-emerald-400 cursor-default';
+                } else if (cls.isAdvanced && !canTransferAdv) {
+                    btnText = `🔒需${baseClsName}Lv.20`;
+                    btnClass = 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed';
+                }
+
                 return `
                     <div class="p-3 rounded-xl bg-slate-950 border ${isCurrent ? 'border-emerald-500' : 'border-purple-500/40'} flex items-center justify-between">
                         <div class="pr-2 space-y-0.5">
                             <div class="flex flex-wrap items-center gap-1.5">
                                 <span class="text-xs font-black text-amber-400">【${cls.name}】</span>
-                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">${cls.isAdvanced ? `${baseClsName}进阶·上限80级` : '无上限职业'}</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40">${cls.isAdvanced ? `${baseClsName}满20级进阶·上限80级` : '无上限职业(不可再转进阶)'}</span>
                                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">能量：${cls.energyName}</span>
                                 ${isUnlocked ? '<span class="text-[10px] text-emerald-400">已永久解锁</span>' : ''}
                             </div>
                             <p class="text-[11px] text-slate-300">${cls.passiveText}</p>
                         </div>
-                        <button data-adv-trans="${cls.id}" class="btn-town-transfer px-3 py-1.5 rounded-lg text-xs font-black flex-shrink-0 ${
-                            isCurrent ? 'bg-slate-800 text-emerald-400 cursor-default' : 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 shadow'
-                        }">
-                            ${isCurrent ? '当前职业' : '免费进阶转职'}
+                        <button data-adv-trans="${cls.id}" class="btn-town-transfer px-3 py-1.5 rounded-lg text-xs font-black flex-shrink-0 ${btnClass}">
+                            ${btnText}
                         </button>
                     </div>
                 `;
@@ -12415,19 +12426,30 @@
                 renderRunView();
             };
 
-            box.querySelectorAll('.btn-town-limit-break').forEach(btn => {
+            box.querySelectorAll('.btn-town-transfer').forEach(btn => {
                 btn.onclick = () => {
-                    if (p.coins < 500) return showToast('铜币不足 500');
-                    const skId = btn.getAttribute('data-town-lb');
-                    const sk = p.learnedSkills.find(s => s.id === skId);
-                    if (!sk) return;
+                    const cid = btn.getAttribute('data-adv-trans');
+                    if (p.classId === cid) return;
+                    const targetCls = getClassConfig(cid);
+
+                    // 严格校验：进阶职业必须由对应的下位初阶职业满 20 级才可转职
+                    if (targetCls && targetCls.isAdvanced) {
+                        const baseName = getClassConfig(targetCls.baseClassId).name;
+                        if (p.classId !== targetCls.baseClassId) {
+                            playClickSfx();
+                            return showToast(`🔒 只有【${baseName}】可以进阶转职为【${targetCls.name}】！`);
+                        }
+                        if (p.level < 20) {
+                            playClickSfx();
+                            return showToast(`🔒 进阶条件不足：需要【${baseName}】达到满级 Lv.20（当前 Lv.${p.level}）才可转职！`);
+                        }
+                    }
+
                     playClickSfx();
-                    p.coins -= 500;
-                    const curCap = getSkillMaxLevelCap(p, sk);
-                    const baseCap = getClassConfig(p.classId).isHighTier ? 15 : ((ALL_SKILLS[sk.id] && ALL_SKILLS[sk.id].isAdvSkill) ? 6 : 3);
-                    sk.maxCap = Math.max(baseCap, sk.maxCap || baseCap) + 1;
-                    sk.level += 1;
-                    showToast(`📕 技能破限成功！【${getFormattedSkillName(p, sk.id, sk.name)}】等级上限+1并直接升至 Lv.${sk.level}！`);
+                    transferPlayerClass(p, cid);
+                    showToast(targetCls.isAdvanced
+                        ? `🎓 成功进阶转职为【${targetCls.name}】！已开启80级上限、结算储存经验并自动免费洗点！`
+                        : `🎓 已转职为【${targetCls.name}】并自动免费洗点（注意：散人无法再转职进阶职业）！`);
                     renderRunView();
                 };
             });
