@@ -4921,7 +4921,9 @@
 
         function computePlayerDerived(p) {
             const cls = getClassConfig(p.classId);
-            const achBonus = getAchievementBonusStats();
+            const achBonus = p.ignoreAchievements
+                ? { hp: 0, mp: 0, atk: 0, def: 0, spd: 0, spi: 0, hit: 0, eva: 0 }
+                : getAchievementBonusStats();
             const curFloor = (state.run && state.run.floor) ? state.run.floor : 1;
             const hasProphet = p.talentId === 'prophet' || (Array.isArray(p.talentIds) && p.talentIds.includes('prophet'));
             const prophetHit = hasProphet ? 20 * (1 + Math.floor(Math.max(0, curFloor - 1) / 10)) : 0;
@@ -5134,7 +5136,7 @@
                 atk += ms; def += ms; spd += ms; spi += ms; hit += ms; eva += ms;
             }
 
-            if (isInsiderBuffActive()) {
+            if (!p.ignoreAchievements && isInsiderBuffActive()) {
                 if (state.run) state.run.usedInsiderBuff = true;
                 maxHp *= 10;
                 maxMp *= 10;
@@ -16352,10 +16354,12 @@
                 tempP.wis = cls.initDims.wis + 9 * dimPerLv;
                 tempP.bonusHp = 9 * 100;
                 tempP.freePoints = 9 * freePerLv;
+                tempP.ignoreAchievements = true;
                 const d = computePlayerDerived(tempP);
 
                 return {
                     id: getPvpMyId(),
+                    ignoreAchievements: true,
                     name: getPvpMyName(),
                     titleId: state.equippedAchievementId || null,
                     team,
@@ -16409,6 +16413,7 @@
             function recalcPvpPlayerDerived(pl) {
                 const d = computePlayerDerived({
                     ...pl,
+                    ignoreAchievements: true,
                     talentId: null,
                     talentIds: [],
                     spdPctBonus: 0,
