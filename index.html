@@ -1520,14 +1520,14 @@
                 name: '圣愈术',
                 isPublic: true,
                 allowedClasses: ['priest', 'mage'],
-                desc: '（牧师/法师）立即回复 精神强度×5 的生命，接下来 2 回合持续回复该数值 30% 的生命。初始消耗 精神强度×5，每升1级降低 0.5 倍消耗（最低1倍），达最低倍数后每级提升持续回复回合 +1。'
+                desc: '（牧师/法师）立即回复 精神强度×5 的生命，接下来 2 回合持续回复该数值 30% 的生命。初始消耗 精神强度×2，每升1级降低 0.5 倍消耗（最低1倍），达最低倍数后每级提升持续回复回合 +1。'
             },
             wolf_king_call: {
                 id: 'wolf_king_call',
                 name: '狼王呼唤',
                 isPublic: true,
                 allowedClasses: null, // 全职业通用
-                desc: '（通用技能）固定召唤 1 只【友方群狼（Lv = 技能等级）】加入己方阵营，可在右下角列表中点击操控其行动，敌方攻击时可能随机以群狼为目标。'
+                desc: '（通用技能）召唤 技能等级/3（保底1）只【友方群狼（Lv = 技能等级×2）】加入己方阵营，可在右下角列表中点击操控其行动。'
             },
             wolf_king_call_mutant: {
                 id: 'wolf_king_call_mutant',
@@ -1549,7 +1549,7 @@
                 name: '链接锁链',
                 isPublic: true,
                 allowedClasses: ['mage', 'priest'],
-                desc: '（法师/牧师）对敌方造成 精神强度×3 的伤害，每升 1 级提升 1 倍伤害。'
+                desc: '（法师/牧师）对所有敌方施加【链接锁链】Debuff：任意带锁链的敌方受击时，其他带锁链的敌方同步受到等额伤害；若敌方仅剩单体则直接造成 3 倍伤害！'
             },
             poison_arrow: {
                 id: 'poison_arrow',
@@ -1624,7 +1624,7 @@
                 name: '绝望吞噬',
                 isPublic: true,
                 allowedClasses: ['mage', 'priest'],
-                desc: '（法师/牧师·末地精英掉落）随机削弱敌方 20% 主属性，并将被削弱的属性数值加持到自己身上；最高3级，每升1级提高 5%。'
+                desc: '（法师/牧师·末地精英掉落）随机削弱敌方 20% 主属性并加持到自身（每级+5%）；削弱上限封顶 50%，超出部分额外叠加到自身获取比例！'
             },
             purify_soundwave: {
                 id: 'purify_soundwave',
@@ -1676,11 +1676,11 @@
             },
             group_heal: {
                 id: 'group_heal', classId: 'priest', name: '群体治疗',
-                desc: '回复己方全体 精神强度×5 的生命；每升1级提升 +2倍精神强度。'
+                desc: '固定消耗 精神强度×1 圣力，回复己方全体 精神强度×5 的生命；每升1级提升 +1倍治疗量。'
             },
             empower: {
                 id: 'empower', classId: 'priest', name: '强化',
-                desc: '提升目标 50%攻击力、50%速度、50%防御；每升1级各项提升 +20%。'
+                desc: '提升己方全体 全属性 +50%（可叠3层）；每升1级额外提升 +50%。'
             },
             stealth: {
                 id: 'stealth', classId: 'assassin', name: '强隐',
@@ -1987,10 +1987,66 @@
             mutant_wolf_king: 'wolf_god',
             bandit_chief: 'thief_god',
             skeleton_king: 'bone_emperor',
-            end_soundwave: 'end_demise'
+            end_soundwave: 'end_demise',
+            law_manipulator: 'world_consciousness',
+            skeleton_archmage: 'bone_emperor',
+            rookie_doom: 'future_challenge',
+            soul_fallen: 'fallen_soul',
+            ten_thousand_poison_toad: 'ten_thousand_curses'
         };
 
         const MONSTER_BESTIARY = [
+            {
+                id: 'future_challenge',
+                name: '未来挑战（英雄）',
+                tier: '英雄首领',
+                initialLevel: 'Lv.60',
+                roads: '【新手末路上级】、【挑战无限每 100 层倍数关卡】',
+                baseStats: 'Lv.1基准：生命 1000 | 攻击力 150 | 速度 150 | 防御 50 | 蓝量 500',
+                fiveDims: '终极试炼化身 · 拥有二阶段与三阶段双复活机制',
+                growth: '单级成长：生命+1000、攻击+150、速度+150、防御+50、蓝量+500',
+                skills: [
+                    { name: '二阶段', type: '被动复活', desc: '死后复活，等级+1，复活生命为“当前等级-5”的满生命值。' },
+                    { name: '三阶段', type: '被动复活', desc: '二阶段后再死后复活，全属性+100%，复活生命为“当前等级-15”的满生命值。' },
+                    { name: '残暴', type: '被动增伤', desc: '每次攻击造成伤害后，自身攻击力 +10%。' },
+                    { name: '五连击', type: '主动连斩', desc: '连续造成5次判定为基础攻击的50%伤害；每级+5%伤害，每3级+1次攻击。' },
+                    { name: '连续普攻', type: '主动Buff', desc: '3回合内每次普攻追加1次无视一切防御/减伤/闪避/增减益的固定30%攻击伤害；每级+1回合、+5%伤害。' }
+                ]
+            },
+            {
+                id: 'fallen_soul',
+                name: '堕落灵魂（英雄）',
+                tier: '英雄首领',
+                initialLevel: 'Lv.35',
+                roads: '【灵魂沦陷者上级】、【地狱难度/首领异变】',
+                baseStats: 'Lv.1基准：生命 500 | 速度 100 | 蓝量 3500 | 精神强度 100',
+                fiveDims: '堕落幽冥主宰 · 开局分裂双体，全灭后现完全体',
+                growth: '单级成长：生命+500、速度+100、蓝量+3500、精神+100',
+                skills: [
+                    { name: '鬼身', type: '被动抵伤', desc: '生命低于1点后扣除等量蓝量抵消伤害。' },
+                    { name: '夺舍', type: '被动复活', desc: '死后牺牲存活的下位怪物复活并降至对应等级，最多复活2次。' },
+                    { name: '堕落', type: '被动分裂', desc: '开局分裂为2个60%属性的个体，两个个体全部死亡后才会出现100%完全体。' },
+                    { name: '魂力共鸣', type: '被动反制', desc: '玩家释放主动技能时，消耗对应蓝量同步释放反制技能。' },
+                    { name: '魂力剥夺', type: '主动汲蓝', desc: '扣除敌方蓝量上限 10%（每级+2%）的蓝量，并造成扣除蓝量/2的伤害。' },
+                    { name: '魂力摆渡', type: '绝杀技能', desc: '仅在第3回合过后释放；耗20%蓝量，10%几率直接斩杀，否则造成消耗蓝量10%伤害。' }
+                ]
+            },
+            {
+                id: 'ten_thousand_curses',
+                name: '万咒概念（英雄）',
+                tier: '英雄首领',
+                initialLevel: 'Lv.35',
+                roads: '【万毒金蟾上级】、【地狱难度/首领异变】',
+                baseStats: 'Lv.1基准：生命 1000 | 攻击力 50 | 蓝量 1000 | 速度 100 | 精神强度 150',
+                fiveDims: '万毒与诅咒的具象化概念存在',
+                growth: '单级成长：生命+1000、攻击+50、蓝量+1000、速度+100、精神+150',
+                skills: [
+                    { name: '剧毒 / 万毒', type: '被动毒源', desc: '普攻附带剧毒无视防御伤害，且场上所有Debuff无叠加上限。' },
+                    { name: '诅咒', type: '被动追击', desc: '普通攻击附带（敌方当前Debuff总数 / 5）次追加普攻。' },
+                    { name: '万咒', type: '主动Debuff', desc: '对敌方施加10个随机Debuff，每级提升3个。' },
+                    { name: '咒力爆发', type: '主动引爆', desc: '造成（Debuff总数×精神强度）伤害并清除Debuff；每级保留10%Debuff（上限50%），达上限后每级+10%伤害。' }
+                ]
+            },
             {
                 id: 'end_wanderer',
                 name: '终末徘徊者（精英）',
@@ -4457,17 +4513,49 @@
                 baseDims = { vit: 2, int: 1, str: 1, agi: 1, wis: 0 };
                 intentType = 'attack'; intentText = '普通攻击';
             } else if (monsterId === 'bone_emperor') {
-                // 英雄属性已按 50% 折半：生命2500、攻击100、防御75、速度25、蓝量500（被动【噩梦】自带全属性+20%）
+                const bSkLv = 1 + Math.floor(g / 5);
+                const nightmareMult = 2.0 + (bSkLv - 1) * 0.10; // 被动【噩梦】：全属性 +100% + (技能等级-1)*10%
                 name = '骨皇（英雄）'; tier = '英雄';
-                hp = Math.round((2500 + g * 2500) * 1.2 * hpScale);
-                atk = Math.round((100 + g * 100) * 1.2 * atkScale);
-                def = Math.round((75 + g * 75) * 1.2);
-                spd = Math.round((25 + g * 25) * 1.2);
-                mp = Math.round((500 + g * 500) * 1.2);
-                hit = Math.round((10 + g * 5) * 1.2);
-                eva = Math.round((10 + g * 5) * 1.2);
+                hp = Math.round((2500 + g * 2500) * nightmareMult * hpScale);
+                atk = Math.round((100 + g * 100) * nightmareMult * atkScale);
+                def = Math.round((75 + g * 75) * nightmareMult);
+                spd = Math.round((25 + g * 25) * nightmareMult);
+                mp = Math.round((500 + g * 500) * nightmareMult);
+                hit = Math.round((10 + g * 5) * nightmareMult);
+                eva = Math.round((10 + g * 5) * nightmareMult);
                 baseDims = { vit: 32.5, int: 5, str: 10, agi: 2.5, wis: 0 };
-                intentType = 'buff'; intentText = '技能【皇之领域】（全属性+20%）';
+                intentType = 'buff'; intentText = '技能【皇之领域】（被动【力大飞砖】【二阶段】）';
+            } else if (monsterId === 'future_challenge') {
+                name = '未来挑战（英雄）'; tier = '英雄';
+                hp = Math.round((1000 + g * 1000) * hpScale);
+                atk = Math.round((150 + g * 150) * atkScale);
+                spd = 150 + g * 150;
+                def = Math.round(50 + g * 50);
+                mp = 500 + g * 500;
+                hit = 15 + g * 8; eva = 10 + g * 5;
+                baseDims = { vit: 15, int: 5, str: 15, agi: 15, wis: 0 };
+                intentType = 'atk_skill'; intentText = '技能【五连击】（5段普攻判定）';
+            } else if (monsterId === 'fallen_soul') {
+                name = '堕落灵魂（英雄）'; tier = '英雄';
+                hp = Math.round((500 + g * 500) * hpScale);
+                spd = 100 + g * 100;
+                mp = Math.round((3500 + g * 3500) * hpScale);
+                spi = Math.round((100 + g * 100) * atkScale);
+                atk = Math.max(1, Math.round(spi * 0.6));
+                hit = 15 + g * 8; eva = 10 + g * 5;
+                hasGhostBody = true;
+                baseDims = { vit: 5, int: 25, str: 0, agi: 10, wis: 10 };
+                intentType = 'atk_skill'; intentText = '技能【魂力剥夺】（汲蓝并造伤）';
+            } else if (monsterId === 'ten_thousand_curses') {
+                name = '万咒概念（英雄）'; tier = '英雄';
+                hp = Math.round((1000 + g * 1000) * hpScale);
+                atk = Math.round((50 + g * 50) * atkScale);
+                mp = 1000 + g * 1000;
+                spd = 100 + g * 100;
+                spi = Math.round((150 + g * 150) * atkScale);
+                hit = 15 + g * 8; eva = 10 + g * 5;
+                baseDims = { vit: 10, int: 10, str: 5, agi: 10, wis: 15 };
+                intentType = 'debuff'; intentText = '技能【万咒】（施加10+随机Debuff）';
             } else if (monsterId === 'end_wanderer') {
                 name = '终末徘徊者（精英）'; tier = '精英';
                 hp = Math.round((200 + g * 200) * hpScale);
@@ -4593,7 +4681,16 @@
                 poisonStacks: 0,
                 poisonMultAdd: 0,
                 willEscape: false,
-                escaped: false
+                escaped: false,
+                justSummoned: monsterId === 'remnant_soul',
+                chainLinked: false,
+                revivedPhase3: false,
+                phase3Mult: false,
+                contBasicTurns: 0,
+                contBasicPct: 0,
+                possessRevives: 0,
+                isFallenClone: false,
+                isFallenComplete: false
             };
         }
         
@@ -5187,8 +5284,11 @@
             if (skill.id === 'compressed_qi') {
                 return Math.max(1, Math.round(d.maxMp * 0.30 * costMultFactor));
             }
+            if (skill.id === 'group_heal') {
+                return Math.max(1, Math.round(d.spi * costMultFactor));
+            }
             if (skill.id === 'holy_heal') {
-                const costMult = Math.max(1, 5 - (skill.level - 1) * 0.5);
+                const costMult = Math.max(1, 2 - (skill.level - 1) * 0.5);
                 return Math.round(d.spi * costMult * costMultFactor);
             }
             if (skill.id === 'mana_shield') {
@@ -5371,7 +5471,7 @@
         function isDebuffCapRemoved(battle) {
             const p = state.run && state.run.player;
             if (p && p.learnedSkills.some(s => s.id === 'ten_thousand_poisons')) return true;
-            if (battle && getAliveMonsters(battle).some(m => m.id === 'ten_thousand_poison_toad')) return true;
+            if (battle && getAliveMonsters(battle).some(m => m.id === 'ten_thousand_poison_toad' || m.id === 'ten_thousand_curses')) return true;
             return false;
         }
 
@@ -5458,9 +5558,30 @@
                 logs: []
             };
 
-            getAliveMonsters(run.battle).forEach(m => {
+            const initSnapshot = [...getAliveMonsters(run.battle)];
+            initSnapshot.forEach(m => {
                 if (m.id === 'returning_demon_bear') {
                     triggerDemonBearEntrance(run.battle, m);
+                } else if (m.id === 'fallen_soul' && !m.isFallenClone && !m.isFallenComplete) {
+                    const idx = run.battle.monsters.indexOf(m);
+                    if (idx >= 0) run.battle.monsters.splice(idx, 1);
+                    for (let k = 1; k <= 2; k++) {
+                        const cl = createMonsterInstance('fallen_soul', m.level, m.extraScale || 1.0, true);
+                        cl.name = `堕落灵魂·分体${k}（英雄）`;
+                        cl.isFallenClone = true;
+                        cl.fullLevel = m.level;
+                        cl.fullScale = m.extraScale || 1.0;
+                        cl.maxHp = Math.max(1, Math.round(cl.maxHp * 0.60));
+                        cl.hp = cl.maxHp;
+                        cl.maxMp = Math.max(1, Math.round(cl.maxMp * 0.60));
+                        cl.mp = cl.maxMp;
+                        cl.baseAtk = Math.max(1, Math.round(cl.baseAtk * 0.60));
+                        cl.baseDef = Math.round(cl.baseDef * 0.60);
+                        cl.baseSpd = Math.max(1, Math.round(cl.baseSpd * 0.60));
+                        cl.spi = Math.max(1, Math.round(cl.spi * 0.60));
+                        run.battle.monsters.push(cl);
+                    }
+                    addBattleLog(run.battle, `👻 【堕落灵魂】触发被动【堕落】：开局分裂为 2 个 60% 属性的分体（全灭后才会现出完全体）！`);
                 }
             });
 
@@ -5651,8 +5772,22 @@
                     defMult += domMult;
                     spdMult += domMult;
                 }
+                // 骷髅王被动【寡人】：场上只剩自己 1 个怪物时，全属性 +100%，每级 +20%
+                if (m.id === 'skeleton_king' && alive.length === 1) {
+                    const kSkLv = getMonsterSkillLevel(m);
+                    const lonelyAdd = 1.0 + (kSkLv - 1) * 0.20;
+                    atkMult += lonelyAdd;
+                    defMult += lonelyAdd;
+                    spdMult += lonelyAdd;
+                }
+                // 未来挑战被动【三阶段】：全属性 +100%
+                if (m.phase3Mult) {
+                    atkMult += 1.0;
+                    defMult += 1.0;
+                    spdMult += 1.0;
+                }
 
-                                const syncBonus = m.enemyMindSyncBonus || 0;
+                const syncBonus = m.enemyMindSyncBonus || 0;
                 const devourAtk = m.devouredAtk || 0;
                 const devourSpd = m.devouredSpd || 0;
                 const devourDef = m.devouredDef || 0;
@@ -5682,7 +5817,7 @@
                 return (30 + (skLv - 1) * 10) * 2;
             }
             if (m.id === 'soul_fallen') {
-                const pct = 0.10 + (skLv - 1) * 0.01;
+                const pct = 0.10 + (skLv - 1) * 0.02;
                 return Math.max(1, Math.round(m.maxMp * pct));
             }
             if (m.maxMp <= 0) return 0;
@@ -5715,7 +5850,63 @@
 
                 const cost = getMonsterSkillMpCost(m);
                 const hasMp = m.mp >= cost;
-                if (m.id === 'end_wanderer') {
+                if (m.id === 'future_challenge') {
+                    if (!m.contBasicTurns && hasMp && Math.random() < 0.45) {
+                        m.intentType = 'buff'; m.intent = '技能【连续普攻】（普攻追加固定真伤）';
+                    } else if (hasMp && Math.random() < 0.70) {
+                        m.intentType = 'atk_skill'; m.intent = '技能【五连击】（5+段基础攻击）';
+                    } else {
+                        m.intentType = 'attack'; m.intent = '普通攻击（被动【残暴】）';
+                    }
+                } else if (m.id === 'fallen_soul') {
+                    if (battle.round > 3 && m.mp >= Math.round(m.maxMp * 0.20) && Math.random() < 0.45) {
+                        m.intentType = 'atk_skill'; m.intent = '终极技能【魂力摆渡】（10%几率直接斩杀）';
+                    } else if (hasMp) {
+                        m.intentType = 'debuff'; m.intent = '技能【魂力剥夺】（扣除敌方上限蓝量并造伤）';
+                    } else {
+                        m.intentType = 'attack'; m.intent = '普通攻击';
+                    }
+                } else if (m.id === 'ten_thousand_curses') {
+                    const curDebuffs = (battle.playerBleedStacks || 0) + (battle.playerPoisonStacks || 0) + (battle.playerMiasmaStacks || 0);
+                    if (hasMp && curDebuffs >= 10 && Math.random() < 0.55) {
+                        m.intentType = 'atk_skill'; m.intent = `技能【咒力爆发】（引爆${curDebuffs}层Debuff×精神）`;
+                    } else if (hasMp && Math.random() < 0.70) {
+                        m.intentType = 'debuff'; m.intent = '技能【万咒】（施加10+随机Debuff）';
+                    } else {
+                        m.intentType = 'attack'; m.intent = '普通攻击（被动【剧毒】【诅咒】）';
+                    }
+                } else if (m.id === 'returning_demon_bear') {
+                    if (hasMp && Math.random() < 0.50) {
+                        m.intentType = 'def_skill'; m.intent = '技能【护犊子】（全体施加防御×3护盾）';
+                    } else {
+                        m.intentType = 'attack'; m.intent = '普通攻击（被动【守护】【顾家】）';
+                    }
+                } else if (m.id === 'bandit_chief') {
+                    const banditCnt = alive.filter(x => x.id === 'bandit_normal').length;
+                    const hasCoinAlly = alive.some(x => ['bandit_normal', 'robber_elite', 'tomb_raider', 'thief_god', 'bandit_chief'].includes(x.id));
+                    if (hasCoinAlly && hasMp && Math.random() < 0.45) {
+                        m.intentType = 'buff'; m.intent = '技能【撒钱】（为铜币系队友叠层）';
+                    } else if (banditCnt < 2 && hasMp && Math.random() < 0.55) {
+                        m.intentType = 'summon'; m.intent = '技能【召唤山贼】';
+                    } else {
+                        m.intentType = 'attack'; m.intent = '普通攻击（被动【大剑】全体伤害）';
+                    }
+                } else if (m.id === 'ten_thousand_poison_toad') {
+                    const frogCnt = alive.filter(x => x.id === 'poison_frog').length;
+                    if (frogCnt < 2 && hasMp && Math.random() < 0.45) {
+                        m.intentType = 'summon'; m.intent = '技能【召唤毒蛙】';
+                    } else if (hasMp && Math.random() < 0.65) {
+                        m.intentType = 'atk_skill'; m.intent = '攻击技能【毒箭】（被动【万毒】）';
+                    } else {
+                        m.intentType = 'attack'; m.intent = '普通攻击（被动【剧毒】）';
+                    }
+                } else if (m.id === 'bone_emperor') {
+                    if (!m.boneDomainStacks && m.mp >= Math.round(m.maxMp * 0.5) && Math.random() < 0.55) {
+                        m.intentType = 'buff'; m.intent = '技能【皇之领域】（耗50%蓝，全属性+20%）';
+                    } else {
+                        m.intentType = 'attack'; m.intent = '普通攻击（被动【力大飞砖】全体高伤）';
+                    }
+                } else if (m.id === 'end_wanderer') {
                     if (hasMp && Math.random() < 0.65) {
                         m.intentType = 'debuff'; m.intent = '技能【绝望吞噬】（汲取敌方主属性）';
                     } else {
@@ -5997,12 +6188,9 @@
 
                 spd: Math.max(1, Math.round(d.spd * weakenMult * spdDebuffMult * empMult * conscienceMult * berserkSpdMult)),
 
-                spi: Math.max(0, Math.round(d.spi * weakenMult * conscienceMult * meditationSpiMult)),
-
-                hit: Math.max(0, Math.round(d.hit * weakenMult * conscienceMult)),
-
-                eva: Math.max(0, Math.round(d.eva * weakenMult * conscienceMult))
-
+                spi: Math.max(0, Math.round(d.spi * weakenMult * empMult * conscienceMult * meditationSpiMult)),
+                hit: Math.max(0, Math.round(d.hit * weakenMult * empMult * conscienceMult)),
+                eva: Math.max(0, Math.round(d.eva * weakenMult * empMult * conscienceMult))
             };
 
         }
@@ -6457,35 +6645,74 @@
                 addBattleLog(battle, `✨ 【${target.name}】处于【无敌】状态，免疫了本次伤害！`);
                 return 0;
             }
+
+            // 【链接锁链】Debuff 生效：多目标时传导等额伤害给其他带锁链敌方；若仅剩单体则直接造成 3 倍伤害
+            let finalDmg = dmg;
+            let chainOthers = [];
+            if (target.chainLinked && !battle._inChainLink) {
+                const linkedAlive = getAliveMonsters(battle).filter(m => m.chainLinked);
+                if (linkedAlive.length <= 1) {
+                    finalDmg = dmg * 3;
+                    addBattleLog(battle, `⛓️ 【链接锁链】单体爆发触发！对【${target.name}】直接造成 3 倍伤害（${finalDmg}）！`);
+                } else {
+                    chainOthers = linkedAlive.filter(m => m.uid !== target.uid);
+                }
+            }
+
+            let dealtResult = 0;
             if (target.unityShared) {
                 const sharedUnits = getAliveMonsters(battle).filter(m => m.unityShared);
                 if (sharedUnits.length > 1) {
-                    const splitDmg = Math.max(1, Math.round(dmg / sharedUnits.length));
+                    const splitDmg = Math.max(1, Math.round(finalDmg / sharedUnits.length));
                     addBattleLog(battle, `🐺 【团结】生效：${sharedUnits.length} 个单位共同平摊伤害（各承受 ${splitDmg} 点）！`);
                     sharedUnits.forEach(u => {
                         applySingleMonsterRawLoss(battle, u, splitDmg);
                         checkMonsterDeathOrPhase(battle, u);
                     });
-                    return dmg;
+                    dealtResult = finalDmg;
+                } else {
+                    dealtResult = applySingleMonsterRawLoss(battle, target, finalDmg);
+                }
+            } else {
+                dealtResult = applySingleMonsterRawLoss(battle, target, finalDmg);
+            }
+
+            if (chainOthers.length > 0 && dealtResult > 0 && !battle._inChainLink) {
+                battle._inChainLink = true;
+                try {
+                    chainOthers.forEach(o => {
+                        if (o.hp > 0 && !(o.invincibleTurns > 0)) {
+                            applySingleMonsterRawLoss(battle, o, dealtResult);
+                            addBattleLog(battle, `⛓️ 【链接锁链】伤害传导：对【${o.name}】同步造成 ${dealtResult} 点伤害！`);
+                            checkMonsterDeathOrPhase(battle, o);
+                        }
+                    });
+                } finally {
+                    battle._inChainLink = false;
                 }
             }
-            return applySingleMonsterRawLoss(battle, target, dmg);
+            return dealtResult;
         }
 
-        function dealPlayerDamageToMonster(battle, target, rawDamage, ignoreDef = false, customMult = 1.0) {
+        function dealPlayerDamageToMonster(battle, target, rawDamage, ignoreDef = false, customMult = 1.0, skipHitCheck = false) {
+            const p = state.run.player;
+            if (target.invincibleTurns && target.invincibleTurns > 0) {
+                addBattleLog(battle, `✨ 【${target.name}】处于【无敌】状态，免疫了你的攻击！`);
+                return 0;
+            }
+            let mult = customMult;
 
-            const p = state.run.player;
-
-            if (target.invincibleTurns && target.invincibleTurns > 0) {
-
-                addBattleLog(battle, `✨ 【${target.name}】处于【无敌】状态，免疫了你的攻击！`);
-
-                return 0;
-
-            }
-
-            let mult = customMult;
-
+            if (!skipHitCheck) {
+                const d = getCombatPlayerStats(battle);
+                const hitRes = (target.id === 'world_consciousness' || p.classId === 'mind_controller')
+                    ? { isDodged: false, dmgMult: 1.0, tag: '' }
+                    : resolveHitAndEvade(d.hit, Math.max(0, target.eva - (p.classId === 'ballista' ? 20 : 0)), 0);
+                if (hitRes.isDodged) {
+                    addBattleLog(battle, `💨 你的技能攻击被【${target.name}】闪避了！`);
+                    return 0;
+                }
+                mult *= hitRes.dmgMult;
+            }
 
             if (p.classId === 'sword_grandmaster') {
 
@@ -6785,7 +7012,7 @@
                         baseRaw = Math.round(baseRaw * (1.5 + (battle.arrowRainLv - 1) * 0.5));
                     }
 
-                    const dmg = dealPlayerDamageToMonster(battle, target, baseRaw, false, hitRes.dmgMult);
+                    const dmg = dealPlayerDamageToMonster(battle, target, baseRaw, false, hitRes.dmgMult, true);
                     totalDealtToTarget += dmg;
                     hitDmgs.push(dmg);
                     if (dmg <= 0) {
@@ -6896,7 +7123,7 @@
                 return;
             }
 
-            const singleTargetSkills = ['mana_erosion', 'heavy_strike', 'mana_bomb', 'raging_strike', 'assault', 'qigong_wave', 'ten_thousand_swords', 'chain_link', 'poison_arrow', 'wolf_bite', 'ghost_spike', 'despair_devour', 'purify_soundwave', 'charged_shot', 'mana_impact', 'mind_trauma', 'shadow_flurry', 'shadow_erase', 'boundless_sword_qi'];
+            const singleTargetSkills = ['mana_erosion', 'heavy_strike', 'mana_bomb', 'raging_strike', 'assault', 'qigong_wave', 'ten_thousand_swords', 'poison_arrow', 'wolf_bite', 'ghost_spike', 'despair_devour', 'purify_soundwave', 'charged_shot', 'mana_impact', 'mind_trauma', 'shadow_flurry', 'shadow_erase', 'boundless_sword_qi'];
             const target = getValidTargetMonster(battle);
             if (singleTargetSkills.includes(sk.id) && (!target || !canTargetMonster(battle, target))) {
                 return;
@@ -6971,8 +7198,7 @@
                     addBattleLog(battle, `⚡ 【重击 Lv.${sk.level}】触发斩杀（当前斩杀线 ${Math.round(execThreshold * 100)}%）！【${target.name}】被直接斩杀！`);
                     checkMonsterDeathOrPhase(battle, target);
                 } else {
-                    const hitRes = target.id === 'world_consciousness' ? { dmgMult: 1.0 } : resolveHitAndEvade(d.hit, target.eva, 0);
-                    const dmg = dealPlayerDamageToMonster(battle, target, d.atk * 1.5, false, hitRes.dmgMult);
+                    const dmg = dealPlayerDamageToMonster(battle, target, d.atk * 1.5, false, 1.0);
                     if (!isDummy && target.heavyWoundTurns === 0) {
                         target.maxHp = Math.max(1, Math.round(target.maxHp * (1 - woundPct)));
                         target.hp = Math.min(target.hp, target.maxHp);
@@ -6984,22 +7210,27 @@
                 }
             } else if (sk.id === 'holy_heal') {
                 const immediateHeal = Math.round(d.spi * 5);
-                const extraTurns = sk.level > 9 ? (sk.level - 9) : 0;
+                const extraTurns = sk.level > 3 ? (sk.level - 3) : 0;
                 const hotTurns = 2 + extraTurns;
                 p.hp = Math.min(d.maxHp, p.hp + immediateHeal);
                 battle.playerHolyHealTurns = hotTurns;
                 battle.playerHolyHealVal = Math.round(immediateHeal * 0.30);
                 addBattleLog(battle, `✨ 你释放【圣愈术 Lv.${sk.level}】，立即回复 ${immediateHeal} 点生命，并在接下来 ${hotTurns} 回合每回合回复 ${battle.playerHolyHealVal} 点生命！`);
             } else if (sk.id === 'wolf_king_call') {
-                const newWolf = createFriendlySummon('wolf_pack', sk.level, d.spd);
-                newWolf.actionsLeft = 1;
-                battle.summons.push(newWolf);
-                addBattleLog(battle, `📯 你释放【狼王呼唤 Lv.${sk.level}】，召唤了 1 只【友方群狼 Lv.${sk.level}】（可在右下角点击操控）！`);
+                const sumCnt = Math.max(1, Math.floor(sk.level / 3));
+                const sumLv = sk.level * 2;
+                for (let w = 0; w < sumCnt; w++) {
+                    const newWolf = createFriendlySummon('wolf_pack', sumLv, d.spd);
+                    newWolf.actionsLeft = 1;
+                    battle.summons.push(newWolf);
+                }
+                addBattleLog(battle, `📯 你释放【狼王呼唤 Lv.${sk.level}】，召唤了 ${sumCnt} 只【友方群狼 Lv.${sumLv}】（可在右下角点击操控）！`);
             } else if (sk.id === 'wolf_king_call_mutant') {
-                const newWerewolf = createFriendlySummon('werewolf', sk.level, d.spd);
+                const sumLv = sk.level * 2;
+                const newWerewolf = createFriendlySummon('werewolf', sumLv, d.spd);
                 newWerewolf.actionsLeft = 1;
                 battle.summons.push(newWerewolf);
-                addBattleLog(battle, `🌕 你释放【狼王呼唤(变异) Lv.${sk.level}】，召唤了 1 只精英【友方狼人 Lv.${sk.level}】（可在右下角点击操控）！`);
+                addBattleLog(battle, `🌕 你释放【狼王呼唤(变异) Lv.${sk.level}】，召唤了 1 只精英【友方狼人 Lv.${sumLv}】！`);
             } else if (sk.id === 'wolf_bite') {
                 const dmgMult = 1 + (sk.level - 1) * 0.5;
                 const bleedPct = 0.30 + (sk.level - 1) * 0.10;
@@ -7037,13 +7268,12 @@
                 const addStr = (sk.level * 4) * (1 + bonusLayers);
                 battle.playerStrBuff = (battle.playerStrBuff || 0) + addStr;
                 addBattleLog(battle, `💪 你释放【力量加强 Lv.${sk.level}】：本场战斗自身【力量】主属性提升 +${addStr}！`);
-            } else if (sk.id === 'chain_link') {
-                const chainMult = 3 + (sk.level - 1) * 1;
-                const rawChain = d.spi * chainMult;
-                const dmg = dealPlayerDamageToMonster(battle, target, rawChain, false, 1.0);
-                addBattleLog(battle, `⛓️ 你对【${target.name}】释放【链接锁链 Lv.${sk.level}】（精神×${chainMult}），造成 ${dmg} 点伤害！`);
-                checkBearCounterAttack(battle, target);
-                checkMonsterDeathOrPhase(battle, target);
+             } else if (sk.id === 'chain_link') {
+                const aliveEnemies = getAliveMonsters(battle);
+                aliveEnemies.forEach(m => {
+                    if (!(m.invincibleTurns > 0)) m.chainLinked = true;
+                });
+                addBattleLog(battle, `⛓️ 你释放【链接锁链 Lv.${sk.level}】：为敌方全体 ${aliveEnemies.length} 个目标施加【链接锁链】Debuff（受击伤害全队传导，单体时直接造成 3 倍伤害）！`);
             } else if (sk.id === 'poison_arrow') {
                 const addStacks = 3 + (sk.level - 1) * 1 + bonusLayers;
                 const triggerTimes = 1 + Math.floor(sk.level / 3);
@@ -7113,18 +7343,18 @@
                 });
                 addBattleLog(battle, `📣 你释放【嘲讽 Lv.${sk.level}】：强制敌方攻击自己、沉默敌方 ${silenceCnt} 次行动，自身防御 +${battle.tauntDefPct}%！`);
             } else if (sk.id === 'group_heal') {
-                const healAmt = Math.round(d.spi * (5 + (sk.level - 1) * 2));
+                const healAmt = Math.round(d.spi * (5 + (sk.level - 1) * 1));
                 p.hp = Math.min(d.maxHp, p.hp + healAmt);
                 getAliveSummons(battle).forEach(s => {
                     s.hp = Math.min(s.maxHp, s.hp + healAmt);
                 });
-                addBattleLog(battle, `💚 【群体治疗 Lv.${sk.level}】回复了己方全体 ${healAmt} 点生命值！`);
+                addBattleLog(battle, `💚 【群体治疗 Lv.${sk.level}】（消耗${cost}圣力）回复了己方全体 ${healAmt} 点生命值！`);
             } else if (sk.id === 'empower') {
                 battle.empowerTurns = 999;
-                const stackGain = 50 + (sk.level - 1) * 20;
+                const stackGain = 50 * sk.level;
                 battle.empowerStacks = Math.min(3, (battle.empowerStacks || 0) + 1);
                 battle.empowerPct = battle.empowerStacks * stackGain;
-                addBattleLog(battle, `⬆️ 【强化 Lv.${sk.level}】（第 ${battle.empowerStacks}/3 层，无限持续）：己方全体（含召唤物）攻击、速度、防御累计提升 +${battle.empowerPct}%！`);
+                addBattleLog(battle, `⬆️ 【强化 Lv.${sk.level}】（第 ${battle.empowerStacks}/3 层）：己方全体全属性累计提升 +${battle.empowerPct}%！`);
             } else if (sk.id === 'stealth') {
                 battle.stealthTurns = 2;
                 battle.stealthLv = sk.level;
@@ -7655,7 +7885,7 @@
 
             } else if (sk.id === 'summon_fire_spirit') {
 
-                const fsLv = 1 + (sk.level - 1) * 2;
+                const fsLv = sk.level * 2;
 
                 const fs = createFriendlySummon('fire_spirit', fsLv, d.spd);
 
@@ -7673,7 +7903,7 @@
 
             } else if (sk.id === 'summon_stone_spirit') {
 
-                const ssLv = 1 + (sk.level - 1) * 2;
+                const ssLv = sk.level * 2;
 
                 const ss = createFriendlySummon('stone_spirit', ssLv, d.spd);
 
@@ -7688,7 +7918,9 @@
             } else if (sk.id === 'despair_devour') {
                 const t = target || getAliveMonsters(battle)[0];
                 if (t) {
-                    const pct = 0.20 + (sk.level - 1) * 0.05;
+                    const rawPct = 0.20 + (sk.level - 1) * 0.05;
+                    const weakenPct = Math.min(0.50, rawPct);
+                    const gainPct = rawPct > 0.50 ? (rawPct * 2 - 0.50) : rawPct;
                     const statPool = [
                         { key: 'atk', dim: 'str', name: '攻击/力量', weight: 3 },
                         { key: 'maxHp', dim: 'vit', name: '生命/体质', weight: 30 },
@@ -7696,7 +7928,9 @@
                         { key: 'spi', dim: 'wis', name: '精神/智慧', weight: 3 }
                     ];
                     const pick = statPool[Math.floor(Math.random() * statPool.length)];
-                    const lossVal = Math.max(1, Math.round((t[pick.key] || 10) * pct));
+                    const baseVal = t[pick.key] || 10;
+                    const lossVal = Math.max(1, Math.round(baseVal * weakenPct));
+                    const gainVal = Math.max(1, Math.round(baseVal * gainPct));
                     if (pick.key === 'maxHp') {
                         t.maxHp = Math.max(1, t.maxHp - lossVal);
                         t.hp = Math.min(t.hp, t.maxHp);
@@ -7709,9 +7943,9 @@
                     }
                     recalcMonstersDynamicStats(battle);
                     if (!battle.playerDimBonus) battle.playerDimBonus = {};
-                    const addDim = Math.max(1, Math.round(lossVal / pick.weight));
+                    const addDim = Math.max(1, Math.round(gainVal / pick.weight));
                     battle.playerDimBonus[pick.dim] = (battle.playerDimBonus[pick.dim] || 0) + addDim;
-                    addBattleLog(battle, `🌑 你对【${t.name}】释放【绝望吞噬 Lv.${sk.level}】：削弱其 ${Math.round(pct * 100)}% ${pick.name}（-${lossVal}），并转化为自身主属性 +${addDim}！`);
+                    addBattleLog(battle, `🌑 你对【${t.name}】释放【绝望吞噬 Lv.${sk.level}】：削弱其 ${Math.round(weakenPct * 100)}% ${pick.name}（-${lossVal}），自身获取 ${Math.round(gainPct * 100)}% 转化为对应主属性 +${addDim}！`);
                 }
             } else if (sk.id === 'purify_soundwave') {
                 const debuffKeys = ['playerBleedStacks', 'playerPoisonStacks', 'playerMiasmaStacks', 'kingWeakenPct', 'playerSpdDebuffPct', 'playerGayDebuff', 'playerDimPenalty'];
@@ -7783,6 +8017,31 @@
                 battle.playerActionsLeft = savedActs + bonusActsFromSubSkills;
             }
             if (battle.isCastingAllMethods) return;
+            // 堕落灵魂被动【魂力共鸣】：玩家释放主动技能时，消耗对应蓝量同步释放反制效果
+            getAliveMonsters(battle).forEach(fm => {
+                if (fm.id === 'fallen_soul' && fm.mp >= cost && p.hp > 0) {
+                    fm.mp = Math.max(0, fm.mp - cost);
+                    const effDef = getEffectivePlayerDef(battle, d.def);
+                    if (['holy_heal', 'group_heal'].includes(sk.id)) {
+                        const fHeal = Math.round(fm.spi * 5);
+                        fm.hp = Math.min(fm.maxHp, fm.hp + fHeal);
+                        addBattleLog(battle, `👻 【${fm.name}】触发被动【魂力共鸣】（耗${cost}蓝）：同步释放【${sk.name}】回复 ${fHeal} 生命！`);
+                    } else if (['mana_shield', 'group_shield', 'blood_shield'].includes(sk.id)) {
+                        const fSh = Math.round(fm.spi * 5);
+                        fm.shield = (fm.shield || 0) + fSh;
+                        addBattleLog(battle, `👻 【${fm.name}】触发被动【魂力共鸣】（耗${cost}蓝）：同步释放【${sk.name}】获得 ${fSh} 护盾！`);
+                    } else {
+                        const resRaw = Math.max(fm.spi, fm.atk) * 2;
+                        const resDmg = calcDamageWithDefense(resRaw, effDef, false, 1.0);
+                        const actual = applyIncomingDamageToPlayer(battle, resDmg, fm);
+                        addBattleLog(battle, `👻 【${fm.name}】触发被动【魂力共鸣】（耗${cost}蓝）：同步镜像释放【${sk.name}】，对你造成 ${actual} 点伤害！`);
+                    }
+                }
+            });
+            if (p.hp <= 0) {
+                handlePlayerDefeated('fallen_soul');
+                return;
+            }
             battle.playerActionsLeft = Math.max(0, battle.playerActionsLeft - 1);
             consumeFriendlyAction();
 
@@ -7857,7 +8116,7 @@
             let rem = dmg;
             let shieldAbsorbed = 0;
 
-            const isAoeBoss = attackerMonster && (attackerMonster.id === 'skeleton_king' || attackerMonster.id === 'bandit_chief' || attackerMonster.id === 'visiting_demon_king' || (attackerMonster.id === 'bone_emperor' && attackerMonster.boneBrickBuff));
+            const isAoeBoss = attackerMonster && (attackerMonster.id === 'skeleton_king' || attackerMonster.id === 'bandit_chief' || attackerMonster.id === 'visiting_demon_king' || (attackerMonster.id === 'bone_emperor' ));
             const paladin = getActivePaladin(battle);
             if (paladin && paladin.hp > 0 && !isAoeBoss) {
                 const actualPalDmg = paladin.defStance ? Math.max(1, Math.round(rem * 0.5)) : rem;
@@ -8353,19 +8612,70 @@
                     return;
                 }
 
-                if (m.id === 'rookie_doom' && !m.revivedPhase2) {
+                // 1. 被动【二阶段】（新手末路 / 骨皇 / 未来挑战）
+                if ((m.id === 'rookie_doom' || m.id === 'bone_emperor' || m.id === 'future_challenge') && !m.revivedPhase2) {
                     m.revivedPhase2 = true;
                     m.level += 1;
                     const remLv = Math.max(1, m.level - 5);
-                    const phase1Ref = createMonsterInstance('rookie_doom', remLv, m.extraScale || 1.0);
-                    m.maxHp = phase1Ref.maxHp;
-                    m.hp = phase1Ref.maxHp;
-                    m.baseAtk += 12;
+                    const phaseRef = createMonsterInstance(m.id, remLv, m.extraScale || 1.0, true);
+                    m.maxHp = phaseRef.maxHp;
+                    m.hp = phaseRef.maxHp;
+                    if (m.id === 'rookie_doom') m.baseAtk += 12;
                     recalcMonstersDynamicStats(battle);
                     addBattleLog(battle, `✨ 【${m.name}】触发被动【二阶段】复活！等级升至 Lv.${m.level}，复活生命值为 Lv.${remLv} 的满生命（${m.hp} 点）！`);
                     return;
                 }
 
+                // 2. 未来挑战被动【三阶段】：二阶段后再复活，全属性 +100%，生命为 当前等级-15 的满生命
+                if (m.id === 'future_challenge' && m.revivedPhase2 && !m.revivedPhase3) {
+                    m.revivedPhase3 = true;
+                    m.phase3Mult = true;
+                    const remLv = Math.max(1, m.level - 15);
+                    const phaseRef = createMonsterInstance('future_challenge', remLv, m.extraScale || 1.0, true);
+                    m.maxHp = phaseRef.maxHp * 2;
+                    m.hp = m.maxHp;
+                    recalcMonstersDynamicStats(battle);
+                    addBattleLog(battle, `🔥 【${m.name}】触发被动【三阶段】极限复活！全属性 +100%，复活生命为 Lv.${remLv} 满生命（${m.hp} 点）！`);
+                    return;
+                }
+
+                // 3. 灵魂沦陷者 / 堕落灵魂 被动【夺舍】：牺牲场上存活下位怪物复活，等级降至该下位等级（最多2次）
+                if ((m.id === 'soul_fallen' || (m.id === 'fallen_soul' && !m.isFallenClone)) && (m.possessRevives || 0) < 2) {
+                    const lowerTargets = getAliveMonsters(battle).filter(o => o.uid !== m.uid && o.tier !== '英雄' && (m.id === 'fallen_soul' || (o.tier !== '首领' && o.tier !== '终极首领')));
+                    if (lowerTargets.length > 0) {
+                        const sac = lowerTargets[0];
+                        sac.hp = 0;
+                        sac.mp = 0;
+                        m.possessRevives = (m.possessRevives || 0) + 1;
+                        m.level = sac.level;
+                        const newRef = createMonsterInstance(m.id, m.level, m.extraScale || 1.0, true);
+                        m.maxHp = newRef.maxHp;
+                        m.hp = newRef.maxHp;
+                        m.maxMp = newRef.maxMp;
+                        m.mp = newRef.maxMp;
+                        m.baseAtk = newRef.baseAtk;
+                        m.baseSpd = newRef.baseSpd;
+                        m.spi = newRef.spi;
+                        recalcMonstersDynamicStats(battle);
+                        addBattleLog(battle, `👻 【${m.name}】触发被动【夺舍】（第 ${m.possessRevives}/2 次）：牺牲【${sac.name} Lv.${sac.level}】重生，等级降至 Lv.${m.level}！`);
+                        return;
+                    }
+                }
+
+                // 4. 堕落灵魂【堕落】分体检测：两个 60% 分体全部死亡后，召唤 100% 完全体！
+                if (m.id === 'fallen_soul' && m.isFallenClone && !battle.fallenSoulFullSpawned) {
+                    const remClones = getAliveMonsters(battle).filter(o => o.isFallenClone && o.uid !== m.uid);
+                    if (remClones.length === 0) {
+                        battle.fallenSoulFullSpawned = true;
+                        const fullBoss = createMonsterInstance('fallen_soul', m.fullLevel || m.level, m.fullScale || 1.0, true);
+                        fullBoss.isFallenComplete = true;
+                        fullBoss.name = '堕落灵魂·完全体（英雄）';
+                        battle.monsters.push(fullBoss);
+                        recalcMonstersDynamicStats(battle);
+                        addBattleLog(battle, `🌑 两具堕落分体均已覆灭！【堕落灵魂·完全体 Lv.${fullBoss.level}（100%全盛形态）】降临战场！`);
+                        showToast('🌑 堕落灵魂两具分体覆灭，100%【完全体】降临！');
+                    }
+                }
                 if (m.id === 'robber_elite' && m.stolenCoins > 0) {
                     const ret = m.stolenCoins * 2;
                     p.coins += ret;
@@ -8592,7 +8902,9 @@
         }
 
         function addArchmageManaMarkOnPlayer(battle, m) {
-            const gain = battle.enemyManaFlushStacks > 0 ? Math.pow(2, battle.enemyManaFlushStacks) : 1;
+            const gain = (battle.enemyManaFlushTurns > 0 && battle.enemyManaFlushStacks > 0)
+                ? Math.min(4, Math.pow(2, battle.enemyManaFlushStacks))
+                : 1;
             battle.enemyManaMarkStacks = (battle.enemyManaMarkStacks || 0) + gain;
             if (battle.enemyManaMarkStacks >= 4) {
                 const bursts = Math.floor(battle.enemyManaMarkStacks / 4);
@@ -8761,11 +9073,91 @@
                         checkMonsterDeathOrPhase(battle, m);
                     }
                 };
-
+                if (m.intentType === 'summon') {
+                    if (m.id === 'wolf_king') {
+                        playSignatureSfx('summon_portal');
+                        playSingleImpactVfx(mRect, 'summon', '📯 狼王呼唤');
+                        const wCnt = Math.max(1, Math.floor(skillLv / 3));
+                        const wLv = skillLv * 2;
+                        for (let i = 0; i < wCnt; i++) {
+                            battle.monsters.push(createMonsterInstance('wolf_pack', wLv));
+                        }
+                        recalcMonstersDynamicStats(battle);
+                        addBattleLog(battle, `📯 【${m.name}】释放【狼王呼唤 Lv.${skillLv}】，召唤了 ${wCnt} 只【群狼 Lv.${wLv}】！`);
+                        applyPlayerLawPassiveToMonster();
+                        renderRunView(); await combatSleep(240); continue;
+                    }
+                    if (m.id === 'mutant_wolf_king') {
+                        playSignatureSfx('summon_portal');
+                        playSingleImpactVfx(mRect, 'summon', '🌕 变异呼唤');
+                        const wLv = skillLv * 2;
+                        battle.monsters.push(createMonsterInstance('werewolf_elite', wLv, 1.0, true));
+                        recalcMonstersDynamicStats(battle);
+                        addBattleLog(battle, `🌕 【${m.name}】消耗双倍蓝量释放【狼王呼唤(变异) Lv.${skillLv}】，召唤了 1 只【狼人 Lv.${wLv}】！`);
+                        applyPlayerLawPassiveToMonster();
+                        renderRunView(); await combatSleep(240); continue;
+                    }
+                    if (m.id === 'bandit_chief') {
+                        playSignatureSfx('summon_portal');
+                        playSingleImpactVfx(mRect, 'summon', '🏴‍☠️ 召唤山贼');
+                        const bLv = skillLv * 2;
+                        battle.monsters.push(createMonsterInstance('bandit_normal', bLv));
+                        recalcMonstersDynamicStats(battle);
+                        addBattleLog(battle, `🏴‍☠️ 【${m.name}】释放【召唤山贼 Lv.${skillLv}】，召唤了 1 名【山贼 Lv.${bLv}】！`);
+                        applyPlayerLawPassiveToMonster();
+                        renderRunView(); await combatSleep(240); continue;
+                    }
+                    if (m.id === 'skeleton_summoner') {
+                        playSignatureSfx('summon_portal');
+                        playSingleImpactVfx(mRect, 'summon', '📯 召唤骷髅');
+                        const sLv = skillLv * 2;
+                        for (let i = 0; i < skillLv; i++) {
+                            battle.monsters.push(createMonsterInstance('summoned_skeleton', sLv));
+                        }
+                        recalcMonstersDynamicStats(battle);
+                        addBattleLog(battle, `📯 【${m.name}】释放【召唤骷髅怪 Lv.${skillLv}】，召唤了 ${skillLv} 只【骷髅怪 Lv.${sLv}】！`);
+                        applyPlayerLawPassiveToMonster();
+                        renderRunView(); await combatSleep(240); continue;
+                    }
+                    if (m.id === 'soul_fallen') {
+                        playSignatureSfx('ghost_wail');
+                        playSingleImpactVfx(mRect, 'summon', '👻 召唤残魂');
+                        const rLv = skillLv * 2;
+                        for (let i = 0; i < skillLv; i++) {
+                            battle.monsters.push(createMonsterInstance('remnant_soul', rLv));
+                        }
+                        recalcMonstersDynamicStats(battle);
+                        addBattleLog(battle, `👻 【${m.name}】释放【召唤残魂 Lv.${skillLv}】，召唤了 ${skillLv} 只【残魂 Lv.${rLv}】！`);
+                        applyPlayerLawPassiveToMonster();
+                        renderRunView(); await combatSleep(240); continue;
+                    }
+                    if (m.id === 'law_manipulator') {
+                        playSignatureSfx('summon_portal');
+                        playSingleImpactVfx(mRect, 'summon', '📯 召唤异能者');
+                        const eLv = skillLv * 2;
+                        battle.monsters.push(createMonsterInstance('esper_elite', eLv, 1.0, true));
+                        recalcMonstersDynamicStats(battle);
+                        addBattleLog(battle, `📯 【${m.name}】释放【召唤异能者 Lv.${skillLv}】，召唤了 1 名【异能者 Lv.${eLv}】！`);
+                        applyPlayerLawPassiveToMonster();
+                        renderRunView(); await combatSleep(240); continue;
+                    }
+                    if (m.id === 'end_demise') {
+                        playSignatureSfx('summon_portal');
+                        playSingleImpactVfx(mRect, 'summon', '📯 诡异声波!');
+                        const swLv = skillLv * 2;
+                        battle.monsters.push(createMonsterInstance('end_soundwave', swLv, 1.0, true));
+                        recalcMonstersDynamicStats(battle);
+                        addBattleLog(battle, `📯 【${m.name}】释放【诡异声波 Lv.${skillLv}】，召唤了首领【末地声波 Lv.${swLv}】！`);
+                        applyPlayerLawPassiveToMonster();
+                        renderRunView(); await combatSleep(240); continue;
+                    }
+                }
                 if (m.id === 'end_wanderer' && m.intentType === 'debuff') {
                     playSignatureSfx('ghost_wail');
                     playSingleImpactVfx(pRect, 'shadow_blade', '🌑 绝望吞噬!');
-                    const pct = Math.min(0.30, 0.20 + (skillLv - 1) * 0.05);
+                    const rawPct = 0.20 + (skillLv - 1) * 0.05;
+                    const weakenPct = Math.min(0.50, rawPct);
+                    const gainPct = rawPct > 0.50 ? (rawPct * 2 - 0.50) : rawPct;
                     const dimKeys = [
                         { k: 'str', label: '力量', mStat: 'devouredAtk', mult: 3 },
                         { k: 'vit', label: '体质', mStat: 'devouredDef', mult: 2 },
@@ -8775,14 +9167,166 @@
                     ];
                     const pick = dimKeys[Math.floor(Math.random() * dimKeys.length)];
                     if (!battle.playerDimPenalty) battle.playerDimPenalty = {};
-                    const addPen = Math.round(pct * 100);
-                    battle.playerDimPenalty[pick.k] = Math.min(80, (battle.playerDimPenalty[pick.k] || 0) + addPen);
-                    const stolenVal = Math.max(1, Math.round((p[pick.k] || 10) * pct * pick.mult));
+                    const addPen = Math.round(weakenPct * 100);
+                    battle.playerDimPenalty[pick.k] = Math.min(50, (battle.playerDimPenalty[pick.k] || 0) + addPen);
+                    const stolenVal = Math.max(1, Math.round((p[pick.k] || 10) * gainPct * pick.mult));
                     m[pick.mStat] = (m[pick.mStat] || 0) + stolenVal;
                     recalcMonstersDynamicStats(battle);
-                    addBattleLog(battle, `🌑 【${m.name}】释放【绝望吞噬 Lv.${skillLv}】：削弱你 ${addPen}%【${pick.label}】主属性，并转化为自身属性 +${stolenVal}！`);
+                    addBattleLog(battle, `🌑 【${m.name}】释放【绝望吞噬 Lv.${skillLv}】：削弱你 ${addPen}%【${pick.label}】（封顶50%），并按 ${Math.round(gainPct * 100)}% 转化为自身属性 +${stolenVal}！`);
                     applyPlayerLawPassiveToMonster();
                     renderRunView(); await combatSleep(240); continue;
+                }
+                if (m.id === 'returning_demon_bear' && m.intentType === 'def_skill') {
+                    playSignatureSfx('shield_up');
+                    playSingleImpactVfx(mRect, 'shield', '🐻 护犊子!');
+                    const shVal = Math.max(1, Math.round(m.def * 3));
+                    getAliveMonsters(battle).forEach(ally => { ally.shield = (ally.shield || 0) + shVal; });
+                    addBattleLog(battle, `🐻 【${m.name}】释放【护犊子】：为敌方全体施加 ${shVal} 点（防御×3）护盾！`);
+                    applyPlayerLawPassiveToMonster();
+                    renderRunView(); await combatSleep(240); continue;
+                }
+                if (m.id === 'bandit_chief' && m.intentType === 'buff') {
+                    playSignatureSfx('coin_steal');
+                    playSingleImpactVfx(mRect, 'coins', '💰 撒钱!');
+                    const addCoinLayers = 10 + (skillLv - 1) * 3;
+                    let buffedCnt = 0;
+                    getAliveMonsters(battle).forEach(ally => {
+                        if (['bandit_normal', 'robber_elite', 'thief_god'].includes(ally.id)) {
+                            ally.stolenCoins = (ally.stolenCoins || 0) + addCoinLayers;
+                            buffedCnt += 1;
+                        } else if (ally.id === 'tomb_raider' || ally.id === 'bandit_chief') {
+                            ally.moneyStacks = (ally.moneyStacks || 0) + addCoinLayers;
+                            buffedCnt += 1;
+                        }
+                    });
+                    recalcMonstersDynamicStats(battle);
+                    addBattleLog(battle, `💰 【${m.name}】释放【撒钱 Lv.${skillLv}】：为场上 ${buffedCnt} 名铜币系队友各叠加 ${addCoinLayers} 层铜币被动！`);
+                    applyPlayerLawPassiveToMonster();
+                    renderRunView(); await combatSleep(240); continue;
+                }
+                if (m.id === 'ten_thousand_poison_toad' && m.intentType === 'summon') {
+                    playSignatureSfx('summon_portal');
+                    playSingleImpactVfx(mRect, 'summon', '🐸 召唤毒蛙!');
+                    const cnt = Math.max(1, Math.floor(skillLv / 3));
+                    const fLv = skillLv * 2;
+                    for (let i = 0; i < cnt; i++) {
+                        battle.monsters.push(createMonsterInstance('poison_frog', fLv, 1.0, true));
+                    }
+                    recalcMonstersDynamicStats(battle);
+                    addBattleLog(battle, `🐸 【${m.name}】释放【召唤毒蛙 Lv.${skillLv}】：召唤了 ${cnt} 只【毒蛙 Lv.${fLv}】！`);
+                    applyPlayerLawPassiveToMonster();
+                    renderRunView(); await combatSleep(240); continue;
+                }
+                if (m.id === 'future_challenge' && m.intentType === 'buff') {
+                    playSignatureSfx('buff_power');
+                    playSingleImpactVfx(mRect, 'buff', '⚡ 连续普攻!');
+                    m.contBasicTurns = 3 + (skillLv - 1);
+                    m.contBasicPct = 0.30 + (skillLv - 1) * 0.05;
+                    addBattleLog(battle, `⚡ 【${m.name}】开启【连续普攻 Lv.${skillLv}】（持续 ${m.contBasicTurns} 回合）：每次普攻追加 1 次无视一切防御/减伤/闪避的固定 ${Math.round(m.contBasicPct * 100)}% 攻击伤害！`);
+                    applyPlayerLawPassiveToMonster();
+                    renderRunView(); await combatSleep(240); continue;
+                }
+                if (m.id === 'future_challenge' && m.intentType === 'atk_skill') {
+                    const hits = 5 + Math.floor((skillLv - 1) / 3);
+                    const pct = 0.50 + (skillLv - 1) * 0.05;
+                    const segDmgs = [];
+                    let totalFiveDmg = 0;
+                    for (let h = 0; h < hits; h++) {
+                        const seg = calcDamageWithDefense(Math.round(m.atk * pct), effDef, false, 1.0);
+                        segDmgs.push(seg);
+                        if (seg > 0) m.brutalStacks = (m.brutalStacks || 0) + 1;
+                    }
+                    await playMonsterComboVisual(m, hits, 'blade_combo', segDmgs, `⚔️ 五连击 ×${hits}!`);
+                    if (!state.run || state.run.phase !== 'battle' || !state.run.battle) return;
+                    for (const seg of segDmgs) {
+                        if (p.hp <= 0) break;
+                        totalFiveDmg += applyIncomingDamageToPlayer(battle, seg, m);
+                        if (m.contBasicTurns > 0 && p.hp > 0) {
+                            const fixedDmg = Math.max(1, Math.round(m.atk * (m.contBasicPct || 0.30)));
+                            p.hp = Math.max(0, p.hp - fixedDmg);
+                            totalFiveDmg += fixedDmg;
+                        }
+                    }
+                    recalcMonstersDynamicStats(battle);
+                    addBattleLog(battle, `⚔️ 【${m.name}】释放【五连击 Lv.${skillLv}】（${hits}段普攻判定${m.contBasicTurns > 0 ? '+连续普攻固定追击' : ''}），共造成 ${totalFiveDmg} 点伤害！`);
+                    applyPlayerLawPassiveToMonster();
+                    renderRunView();
+                    if (p.hp <= 0) { battle.isEnemyTurnAnimating = false; handlePlayerDefeated(m.id); return; }
+                    await combatSleep(240); continue;
+                }
+                if (m.id === 'fallen_soul' && m.intentType === 'debuff') {
+                    const drainPct = 0.10 + (skillLv - 1) * 0.02;
+                    const drainAmt = Math.max(1, Math.round(combatD.maxMp * drainPct));
+                    const actualDrain = Math.min(p.mp, drainAmt);
+                    p.mp = Math.max(0, p.mp - drainAmt);
+                    const dmg = Math.max(1, Math.round(drainAmt / 2));
+                    playSignatureSfx('ghost_wail');
+                    playSingleImpactVfx(pRect, 'arcane_beam', `👻 剥夺 -${dmg}`);
+                    const actual = applyIncomingDamageToPlayer(battle, dmg, m);
+                    addBattleLog(battle, `👻 【${m.name}】释放【魂力剥夺 Lv.${skillLv}】：扣除你 ${actualDrain} 点蓝量（上限${Math.round(drainPct * 100)}%），并造成 ${actual} 点伤害！`);
+                    applyPlayerLawPassiveToMonster();
+                    renderRunView();
+                    if (p.hp <= 0) { battle.isEnemyTurnAnimating = false; handlePlayerDefeated(m.id); return; }
+                    await combatSleep(240); continue;
+                }
+                if (m.id === 'fallen_soul' && m.intentType === 'atk_skill') {
+                    const mpSpent = Math.max(1, Math.round(m.maxMp * 0.20));
+                    m.mp = Math.max(0, m.mp - mpSpent);
+                    playSignatureSfx('doomsday_laser');
+                    if (Math.random() < 0.10) {
+                        p.hp = 0;
+                        playSingleImpactVfx(pRect, 'doomsday', '💀 魂力摆渡·斩杀!');
+                        addBattleLog(battle, `💀 【${m.name}】释放【魂力摆渡】触发 10% 斩杀判定，直接斩杀了你！`);
+                        renderRunView();
+                        battle.isEnemyTurnAnimating = false; handlePlayerDefeated(m.id); return;
+                    } else {
+                        const dmg = Math.max(1, Math.round(mpSpent * 0.10));
+                        playSingleImpactVfx(pRect, 'arcane_beam', `👻 摆渡 -${dmg}`);
+                        const actual = applyIncomingDamageToPlayer(battle, dmg, m);
+                        addBattleLog(battle, `👻 【${m.name}】释放【魂力摆渡】（耗蓝 ${mpSpent}，未触发斩杀），造成 ${actual} 点伤害！`);
+                    }
+                    applyPlayerLawPassiveToMonster();
+                    renderRunView();
+                    if (p.hp <= 0) { battle.isEnemyTurnAnimating = false; handlePlayerDefeated(m.id); return; }
+                    await combatSleep(240); continue;
+                }
+                if (m.id === 'ten_thousand_curses' && m.intentType === 'debuff') {
+                    playSignatureSfx('poison_splash');
+                    playSingleImpactVfx(pRect, 'poison', '☠️ 万咒降临!');
+                    const cnt = 10 + (skillLv - 1) * 3;
+                    for (let i = 0; i < cnt; i++) {
+                        const r = Math.random();
+                        if (r < 0.34) {
+                            battle.playerBleedStacks = (battle.playerBleedStacks || 0) + 1;
+                            battle.playerBleedDmg = Math.max(battle.playerBleedDmg || 0, Math.max(1, Math.round(m.spi * 0.25)));
+                        } else if (r < 0.68) {
+                            battle.playerPoisonStacks = (battle.playerPoisonStacks || 0) + 1;
+                        } else {
+                            battle.playerMiasmaStacks = (battle.playerMiasmaStacks || 0) + 1;
+                            battle.playerMiasmaDmg = Math.max(battle.playerMiasmaDmg || 0, Math.max(1, Math.round(m.maxMp * 0.02)));
+                        }
+                    }
+                    addBattleLog(battle, `☠️ 【${m.name}】释放【万咒 Lv.${skillLv}】：对你施加了 ${cnt} 层随机负面 Debuff！`);
+                    applyPlayerLawPassiveToMonster();
+                    renderRunView(); await combatSleep(240); continue;
+                }
+                if (m.id === 'ten_thousand_curses' && m.intentType === 'atk_skill') {
+                    const totalD = (battle.playerBleedStacks || 0) + (battle.playerPoisonStacks || 0) + (battle.playerMiasmaStacks || 0);
+                    const keepPct = Math.min(0.50, (skillLv - 1) * 0.10);
+                    const extraDmgMult = skillLv > 6 ? (1 + (skillLv - 6) * 0.10) : 1.0;
+                    const rawBurst = Math.max(1, Math.round(totalD * m.spi * extraDmgMult));
+                    const dmg = calcDamageWithDefense(rawBurst, effDef, false, 1.0);
+                    playSignatureSfx('doomsday_laser');
+                    playSingleImpactVfx(pRect, 'poison', `💥 咒力爆发 -${dmg}`);
+                    const actual = applyIncomingDamageToPlayer(battle, dmg, m);
+                    battle.playerBleedStacks = Math.floor((battle.playerBleedStacks || 0) * keepPct);
+                    battle.playerPoisonStacks = Math.floor((battle.playerPoisonStacks || 0) * keepPct);
+                    battle.playerMiasmaStacks = Math.floor((battle.playerMiasmaStacks || 0) * keepPct);
+                    addBattleLog(battle, `💥 【${m.name}】释放【咒力爆发 Lv.${skillLv}】（引爆 ${totalD} 层Debuff，保留 ${Math.round(keepPct * 100)}%），对你造成 ${actual} 点伤害！`);
+                    applyPlayerLawPassiveToMonster();
+                    renderRunView();
+                    if (p.hp <= 0) { battle.isEnemyTurnAnimating = false; handlePlayerDefeated(m.id); return; }
+                    await combatSleep(260); continue;
                 }
                 if (m.id === 'end_soundwave' && m.intentType === 'buff') {
                     playSignatureSfx('sonic_wave');
@@ -9127,15 +9671,15 @@
                 if (m.id === 'skeleton_archmage' && m.intentType === 'debuff') {
                     playSignatureSfx('arcane_beam');
                     playSingleImpactVfx(pRect, 'arcane_beam', '🌊 魔力冲刷!');
-                    const maxFlush = 3 + (skillLv - 1);
                     if (battle.enemyManaMarkStacks > 0) {
-                        const burstDmg = Math.round(m.spi * 2);
                         battle.enemyManaMarkStacks = 0;
+                        const burstDmg = Math.round(m.spi * 2);
                         applyIncomingDamageToPlayer(battle, burstDmg, m);
-                        addBattleLog(battle, `🌊 【${m.name}】释放【魔力冲刷 Lv.${skillLv}】立即引爆魔力印记，造成 ${burstDmg} 点伤害！`);
+                        addBattleLog(battle, `🌊 【${m.name}】释放【魔力冲刷 Lv.${skillLv}】立刻使魔力印记满层引爆，造成 ${burstDmg} 点伤害！`);
                     }
-                    battle.enemyManaFlushStacks = Math.min(maxFlush, (battle.enemyManaFlushStacks || 0) + 1 + bonusLayers);
-                    addBattleLog(battle, `🌀 【魔力冲刷】生效（当前 ${battle.enemyManaFlushStacks}/${maxFlush} 层）：后续魔力印记叠加效率翻倍！`);
+                    battle.enemyManaFlushStacks = Math.min(2, (battle.enemyManaFlushStacks || 0) + 1);
+                    battle.enemyManaFlushTurns = 2 + (skillLv - 1);
+                    addBattleLog(battle, `🌀 【魔力冲刷】生效（持续 ${battle.enemyManaFlushTurns} 回合）：每次攻击叠 ${Math.pow(2, battle.enemyManaFlushStacks)} 层魔力印记！`);
                     applyPlayerLawPassiveToMonster();
                     renderRunView();
                     if (p.hp <= 0) { battle.isEnemyTurnAnimating = false; handlePlayerDefeated(m.id); return; }
@@ -9190,10 +9734,11 @@
                         const actual = applyIncomingDamageToPlayer(battle, dmg, m);
                         addBattleLog(battle, `👻 【${m.name}】释放【鬼刺 Lv.${skillLv}】${multiActTag}造成 ${actual} 点伤害${critTag}！`);
                     } else if (m.id === 'soul_fallen' && m.intentType === 'atk_skill') {
-                        const dmgPct = 0.02 + (skillLv - 1) * 0.01;
+                        const costPct = 0.10 + (skillLv - 1) * 0.02;
+                        const convertMult = 1.0 + (skillLv - 1) * 0.50;
                         const aliveSummons = getAliveSummons(battle);
                         const isSingleTarget = aliveSummons.length === 0;
-                        const rawBurst = Math.max(1, Math.round(m.maxMp * dmgPct * (isSingleTarget ? 2 : 1)));
+                        const rawBurst = Math.max(1, Math.round(m.maxMp * costPct * convertMult * (isSingleTarget ? 2 : 1)));
                         const pDmg = calcDamageWithDefense(rawBurst, effDef, false, finalHitMult);
                         playSignatureSfx('doomsday_laser');
                         playSingleImpactVfx(pRect, 'arcane_beam', `💥 魂力 -${pDmg}`);
@@ -9202,11 +9747,13 @@
                             const sDmg = calcDamageWithDefense(rawBurst, s.def, false, 1.0);
                             s.hp = Math.max(0, s.hp - sDmg);
                         });
-                        addBattleLog(battle, `💥 【${m.name}】释放【魂力爆发 Lv.${skillLv}】${isSingleTarget ? '（单目标2倍伤害）' : ''}，对你造成 ${actual} 点伤害！`);
+                        addBattleLog(battle, `💥 【${m.name}】释放【魂力爆发 Lv.${skillLv}】（耗${Math.round(costPct * 100)}%蓝×${convertMult.toFixed(1)}倍${isSingleTarget ? '，单体2倍' : ''}），对你造成 ${actual} 点伤害！`);
                     } else if (m.id === 'skeleton_archmage' && m.intentType === 'atk_skill') {
                         // 骷髅魔导师【魔力乱舞】：真实 1~8 发奥术飞弹逐发演出！
-                        const hits = Math.floor(Math.random() * 8) + 1;
-                        const totalRaw = m.spi * (5 + (skillLv - 1) * 1);
+                        const minHits = 2 + Math.floor((skillLv - 1) / 3);
+                        const maxHits = 4 + (skillLv - 1);
+                        const hits = Math.floor(Math.random() * (maxHits - minHits + 1)) + minHits;
+                        const totalRaw = m.spi * (3.0 + (skillLv - 1) * 0.5);
                         const singleRaw = Math.max(1, Math.round(totalRaw / hits));
                         const segDmgs = [];
                         for (let h = 0; h < hits; h++) {
@@ -9301,12 +9848,13 @@
                             addBattleLog(battle, `🛡️ 【${m.name}】使用【打抢】未破防（造成 0 点伤害）！`);
                         }
                     } else {
-                        const rawBasic = (m.id === 'bone_emperor' && m.boneBrickBuff) ? Math.round(m.atk * 1.2) : m.atk;
+                        const boneBrickMult = m.id === 'bone_emperor' ? (2.0 + (skillLv - 1) * 0.50) : 1.0;
+                        const rawBasic = Math.round(m.atk * boneBrickMult);
                         const dmg = calcDamageWithDefense(rawBasic, effDef, false, finalHitMult);
-                        const isHeavyHit = ['skeleton_king', 'bandit_chief', 'visiting_demon_king', 'bone_emperor', 'returning_demon_bear', 'survival_dummy'].includes(m.id);
+                        const isHeavyHit = ['skeleton_king', 'bandit_chief', 'visiting_demon_king', 'bone_emperor', 'returning_demon_bear', 'survival_dummy', 'future_challenge'].includes(m.id);
                         playSignatureSfx(isHeavyHit ? 'axe_chop' : 'slash_single');
                         playSingleImpactVfx(pRect, isHeavyHit ? 'axe_cleave' : 'slash', dmg > 0 ? `-${dmg}` : '🛡️0');
-                        if (m.id === 'skeleton_king' || m.id === 'bandit_chief' || m.id === 'visiting_demon_king' || (m.id === 'bone_emperor' && m.boneBrickBuff)) {
+                        if (m.id === 'skeleton_king' || m.id === 'bandit_chief' || m.id === 'visiting_demon_king' || m.id === 'bone_emperor') {
                             const cleaveLabel = m.id === 'visiting_demon_king' ? '大掌' : (m.id === 'bone_emperor' ? '力大飞砖' : '大剑');
                             getAliveSummons(battle).forEach(s => {
                                 const sDmg = calcDamageWithDefense(rawBasic, s.def, false, finalHitMult);
@@ -9317,13 +9865,47 @@
                         const actual = applyIncomingDamageToPlayer(battle, dmg, m);
                         if (actual > 0) {
                             addBattleLog(battle, `⚔️ 【${m.name}】${multiActTag}对你造成 ${actual} 点伤害${critTag}（我方防御 ${effDef} 已抵消部分伤害）！`);
+                            if (m.id === 'future_challenge') {
+                                m.brutalStacks = (m.brutalStacks || 0) + 1;
+                                recalcMonstersDynamicStats(battle);
+                            }
                         } else {
                             addBattleLog(battle, `🛡️ 【${m.name}】${multiActTag}的攻击未破防（我方防御 ${effDef} ≥ 敌方攻击，免伤 0 点）！`);
                         }
-                        if (m.id === 'poison_frog' || m.id === 'dart_frog_elite' || m.id === 'ten_thousand_poison_toad') {
+                        // 未来挑战【连续普攻】追加固定真伤
+                        if (m.id === 'future_challenge' && m.contBasicTurns > 0 && p.hp > 0) {
+                            const fixedDmg = Math.max(1, Math.round(m.atk * (m.contBasicPct || 0.30)));
+                            p.hp = Math.max(0, p.hp - fixedDmg);
+                            addBattleLog(battle, `⚡ 【${m.name}】【连续普攻】追加固定攻击，无视一切减免造成 ${fixedDmg} 点伤害！`);
+                        }
+                        // 变异的狼王被动【狼王合击】：全场下位狼族同步发动攻击
+                        if (m.id === 'mutant_wolf_king' && p.hp > 0) {
+                            const subWolves = getAliveMonsters(battle).filter(w => w.uid !== m.uid && ['lone_wolf', 'wolf_pack', 'werewolf_elite', 'wolf_king'].includes(w.id));
+                            subWolves.forEach(sw => {
+                                if (p.hp <= 0) return;
+                                const swDmg = calcDamageWithDefense(sw.atk, effDef, false, 1.0);
+                                const swAct = applyIncomingDamageToPlayer(battle, swDmg, sw);
+                                addBattleLog(battle, `🐺 【狼王合击】触发：【${sw.name}】同步协同攻击，造成 ${swAct} 点伤害！`);
+                            });
+                        }
+                        // 万咒概念被动【剧毒】与【诅咒】（普攻附带 Debuff总数/5 次追加普攻）
+                        if (m.id === 'poison_frog' || m.id === 'dart_frog_elite' || m.id === 'ten_thousand_poison_toad' || m.id === 'ten_thousand_curses') {
                             playSignatureSfx('poison_splash');
                             playSingleImpactVfx(pRect, 'poison', '🐸 剧毒');
                             triggerMonsterPoisonOnPlayer(battle, m, 1, false, 1);
+                        }
+                        if (m.id === 'ten_thousand_curses' && p.hp > 0) {
+                            const totalDebuffs = (battle.playerBleedStacks || 0) + (battle.playerPoisonStacks || 0) + (battle.playerMiasmaStacks || 0);
+                            const extraHits = Math.floor(totalDebuffs / 5);
+                            if (extraHits > 0) {
+                                let sumExtra = 0;
+                                for (let eh = 0; eh < extraHits; eh++) {
+                                    if (p.hp <= 0) break;
+                                    const eDmg = calcDamageWithDefense(m.atk, effDef, false, 1.0);
+                                    sumExtra += applyIncomingDamageToPlayer(battle, eDmg, m);
+                                }
+                                addBattleLog(battle, `☠️ 【${m.name}】触发被动【诅咒】（${totalDebuffs}层Debuff）：追加 ${extraHits} 次普攻，共造成 ${sumExtra} 点伤害！`);
+                            }
                         }
                         if (m.id === 'skeleton_archmage' && actual > 0) {
                             addArchmageManaMarkOnPlayer(battle, m);
@@ -9373,13 +9955,18 @@
 
             getAliveMonsters(battle).forEach(m => {
                 if (m.id === 'remnant_soul' && m.hp > 0) {
-                    const explodeDmg = Math.max(1, Math.round(m.maxMp * 0.10));
-                    m.hp = 0;
-                    m.mp = 0;
-                    playSignatureSfx('ghost_wail');
-                    playSingleImpactVfx(getPlayerHudRect(), 'arcane_beam', `💥 自爆 -${explodeDmg}`);
-                    applyIncomingDamageToPlayer(battle, explodeDmg, null);
-                    addBattleLog(battle, `💥 【${m.name}】触发回合末被动【残缺】自爆死亡，对你造成 ${explodeDmg} 点无视防御伤害！`);
+                    if (m.justSummoned) {
+                        m.justSummoned = false;
+                        addBattleLog(battle, `👻 【${m.name}】正在蓄能，将于下回合末触发【残缺】自爆！`);
+                    } else {
+                        const explodeDmg = Math.max(1, Math.round(m.maxMp * 0.10));
+                        m.hp = 0;
+                        m.mp = 0;
+                        playSignatureSfx('ghost_wail');
+                        playSingleImpactVfx(getPlayerHudRect(), 'arcane_beam', `💥 自爆 -${explodeDmg}`);
+                        applyIncomingDamageToPlayer(battle, explodeDmg, null);
+                        addBattleLog(battle, `💥 【${m.name}】触发回合末被动【残缺】自爆死亡，对你造成 ${explodeDmg} 点无视防御伤害！`);
+                    }
                 }
             });
             battle.actingMonsterUid = null;
@@ -9406,7 +9993,12 @@
                 if (m.bearAngryTurns > 0) m.bearAngryTurns -= 1;
                 if (m.demonKingBiequTurns > 0) m.demonKingBiequTurns -= 1;
                 if (m.invincibleTurns > 0) m.invincibleTurns -= 1;
+                if (m.contBasicTurns > 0) m.contBasicTurns -= 1;
             });
+            if (battle.enemyManaFlushTurns > 0) {
+                battle.enemyManaFlushTurns -= 1;
+                if (battle.enemyManaFlushTurns === 0) battle.enemyManaFlushStacks = 0;
+            }
 
             if (checkAllMonstersCleared(battle)) return;
 
@@ -10822,7 +11414,9 @@
                 const bossLv = range.max + 2;
                 const isHeroFloor = floor % 50 === 0;
                 if (isHeroFloor) {
-                    const heroPool = ['world_consciousness', 'end_demise', 'visiting_demon_king', 'wolf_god', 'thief_god', 'bone_emperor'];
+                    const heroPool = floor % 100 === 0
+                        ? ['future_challenge']
+                        : ['world_consciousness', 'end_demise', 'visiting_demon_king', 'wolf_god', 'thief_god', 'bone_emperor', 'fallen_soul', 'ten_thousand_curses'];
                     const pickHero = heroPool[Math.floor(Math.random() * heroPool.length)];
                     const boss = createMonsterInstance(pickHero, bossLv, 1.0, true);
                     const g1 = createMonsterInstance('end_soundwave', eliteLv, 1.0, true);
@@ -11157,6 +11751,10 @@
             run.phase = 'stage_settled';
             ev.settleSummary = buildSettleSummaryText(ev, mult);
             renderRunView();
+
+            if (run.mode === 'tutorial' && run.floor === 2 && typeof startAttributeTutorialIfNeeded === 'function') {
+                startAttributeTutorialIfNeeded();
+            }
         }
         
         function triggerDoubleReward() {
@@ -12162,7 +12760,7 @@
                 const d = computePlayerDerived(p);
                 p.hp = d.maxHp;
                 p.mp = d.maxMp;
-                showToast('🛏️ 已在酒店免费休息，生命值与蓝量已全部回满！');
+                showToast('??️ 已在酒店免费休息，生命值与蓝量已全部回满！');
                 renderRunView();
             };
 
@@ -12340,7 +12938,7 @@
                             ${p.learnedSkills.length > 0 ? p.learnedSkills.map(sk => `
                                 <button data-town-lb="${sk.id}" class="btn-town-limit-break p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-left text-[11px]">
                                     <span class="font-black text-amber-300">【${getFormattedSkillName(p, sk.id, sk.name)}】</span>
-                                    <span class="text-emerald-400 block text-[10px]">Lv.${sk.level} → Lv.${sk.level + 1} (500🪙)</span>
+                                    <span class="text-emerald-400 block text-[10px]">Lv.${sk.level} → Lv.${sk.level + 1} (2000🪙)</span>
                                 </button>
                             `).join('') : '<span class="text-[11px] text-slate-500 col-span-2">暂未学习任何技能</span>'}
                         </div>
@@ -12596,7 +13194,7 @@
                             ${p.learnedSkills.length > 0 ? p.learnedSkills.map(sk => `
                                 <button data-sanc-lb="${sk.id}" class="btn-sanc-limit-break p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-left text-[11px]">
                                     <span class="font-black text-amber-300">【${getFormattedSkillName(p, sk.id, sk.name)}】</span>
-                                    <span class="text-emerald-400 block text-[10px]">Lv.${sk.level} → Lv.${sk.level + 1} (500🪙)</span>
+                                    <span class="text-emerald-400 block text-[10px]">Lv.${sk.level} → Lv.${sk.level + 1} (2000🪙)</span>
                                 </button>
                             `).join('') : '<span class="text-[11px] text-slate-500 col-span-2">暂未学习任何技能</span>'}
                         </div>
@@ -12664,7 +13262,7 @@
 
             box.querySelectorAll('.btn-sanc-limit-break').forEach(btn => {
                 btn.onclick = () => {
-                    if (p.coins < 2000) return showToast('铜币不足 ，2000');
+                    if (p.coins < 2000) return showToast('铜币不足 2000');
                     const skId = btn.getAttribute('data-sanc-lb');
                     const sk = p.learnedSkills.find(s => s.id === skId);
                     if (!sk) return;
@@ -12747,6 +13345,8 @@
             if (m.miasmaStacks > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/50">🌊蔓延×${m.miasmaStacks}</span>`);
             if (m.heavyWoundTurns > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-rose-950 text-rose-300 border border-rose-500/50">🔨重伤(${m.heavyWoundTurns}回)</span>`);
             if (m.silencedActions > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-rose-300 border border-rose-500/50">🤐沉默(${m.silencedActions}次)</span>`);
+            if (m.chainLinked) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-400 font-black">⛓️锁链</span>`);
+            if (m.contBasicTurns > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-400">⚡连普(${m.contBasicTurns}回)</span>`);
             if (m.id === 'bandit_normal' && m.stolenCoins > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-rose-950 text-rose-300 border border-rose-500/50">💰赃款-${m.stolenCoins}攻</span>`);
             return tags.join('');
         }
@@ -13652,6 +14252,77 @@
             modal.classList.remove('hidden');
         }
 
+        const ATTR_TUTORIAL_STEPS = [
+            {
+                key: 'hp',
+                name: '生命值',
+                icon: '❤️',
+                desc: '角色的血量，归零即闯关失败。战斗中获得的【护盾】会优先替生命值抵挡伤害。'
+            },
+            {
+                key: 'mp',
+                name: '精力 / 能量',
+                icon: '💧',
+                desc: '释放主动技能的消耗资源（转职后对应魔力/斗气/真气/剑气等）。蓝量不足时无法释放耗蓝技能。'
+            },
+            {
+                key: 'atk',
+                name: '攻击力',
+                icon: '⚔️',
+                desc: '决定普攻与物理技能的基础威力。【核心交互】：伤害 = 攻击力 - 敌方防御；若 攻击力 ≤ 敌方防御，则判定【不破防】，直接造成 0 点伤害！'
+            },
+            {
+                key: 'def',
+                name: '防御力',
+                icon: '🛡️',
+                desc: '直接抵消敌方的攻击伤害（防御 ≥ 敌方攻击力即可免伤 0 点）。战斗中点击【🛡️ 防御】可使本回合防御力 +100%！'
+            },
+            {
+                key: 'spd',
+                name: '速度',
+                icon: '⚡',
+                desc: '决定出手顺序与行动次数！【核心交互】：速度高的一方先手；每回合按速度累积【速度槽】，速度达到对方 2 倍即可单回合连续行动 2 次！'
+            },
+            {
+                key: 'spi',
+                name: '精神强度',
+                icon: '🔮',
+                desc: '决定法术伤害、治疗量与法术护盾厚度。【核心交互】：部分精神技能（如鬼刺/规律/精神冲击）按（我方精神 - 敌方精神）差值结算，精神越高抗性越强！'
+            },
+            {
+                key: 'hit',
+                name: '命中',
+                icon: '🎯',
+                desc: '用来克制敌方闪避！【核心交互】：命中高于敌方闪避 10/20/30/40/50+ 点时，不仅无视闪避，还会触发【命中压制】额外增伤（+30% / +50% / +80% / +120% / +200%起）！'
+            },
+            {
+                key: 'eva',
+                name: '闪避',
+                icon: '💨',
+                desc: '用来躲避敌方普攻与技能！【核心交互】：闪避高于敌方命中 10/20/30/40/50+ 点时，可获得 30% / 50% / 70% / 90% / 100% 闪避几率，直接完全躲开伤害！'
+            }
+        ];
+
+        function isAttrTutorialDone() {
+            try {
+                return localStorage.getItem('RG_ATTR_TUTORIAL_DONE') === '1';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function startAttributeTutorialIfNeeded() {
+            if (isAttrTutorialDone()) return;
+            state.attrTutorialStep = 0;
+            renderCharModal();
+            const modal = document.getElementById('char-modal');
+            if (modal) modal.classList.remove('hidden');
+            setTimeout(() => {
+                const statsEl = document.getElementById('char-stats-section');
+                if (statsEl) statsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 80);
+        }
+
         function renderCharModal() {
             const run = state.run;
             if (!run) return;
@@ -13660,6 +14331,64 @@
             const cls = getClassConfig(p.classId);
             const d = computePlayerDerived(p);
             const body = document.getElementById('char-modal-body');
+
+            const inTut = typeof state.attrTutorialStep === 'number' && state.attrTutorialStep >= 0 && state.attrTutorialStep < ATTR_TUTORIAL_STEPS.length;
+            const tutStep = inTut ? state.attrTutorialStep : 99;
+            const curTutItem = inTut ? ATTR_TUTORIAL_STEPS[tutStep] : null;
+            const nextTutItem = (inTut && tutStep + 1 < ATTR_TUTORIAL_STEPS.length) ? ATTR_TUTORIAL_STEPS[tutStep + 1] : null;
+
+            const closeBtn = document.getElementById('btn-close-char-modal');
+            if (closeBtn) {
+                closeBtn.className = inTut
+                    ? 'w-8 h-8 rounded-lg bg-slate-800/50 text-slate-600 cursor-not-allowed'
+                    : 'w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white';
+            }
+
+            const renderAttrCell = (idx, label, valueHtml) => {
+                if (!inTut) {
+                    return `<div class="px-1.5 py-0.5 rounded">${label}：${valueHtml}</div>`;
+                }
+                if (idx === tutStep) {
+                    return `<div class="px-1.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400 ring-1 ring-amber-400/60 shadow-md transition-all">${label}：${valueHtml}</div>`;
+                }
+                if (idx < tutStep) {
+                    return `<div class="px-1.5 py-0.5 rounded text-slate-200">✅ ${label}：${valueHtml}</div>`;
+                }
+                return `<div class="px-1.5 py-0.5 rounded bg-slate-900/60 text-slate-600 select-none">🔒 ${label}：<span class="blur-[2px]">???</span></div>`;
+            };
+
+            const tutorialBannerHtml = inTut ? `
+                <div class="p-3.5 rounded-xl bg-gradient-to-br from-amber-950/70 via-slate-900 to-slate-950 border-2 border-amber-400 shadow-lg space-y-2.5 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-black text-amber-300">🎓 新手属性教学（${tutStep + 1} / ${ATTR_TUTORIAL_STEPS.length}）</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">仅演示一次</span>
+                    </div>
+                    <div class="p-2.5 rounded-lg bg-slate-950/90 border border-amber-500/40 space-y-1">
+                        <div class="text-sm font-black text-amber-400">${curTutItem.icon} 已解锁属性：【${curTutItem.name}】</div>
+                        <p class="text-xs text-slate-200 leading-relaxed">${curTutItem.desc}</p>
+                    </div>
+                    <button id="btn-attr-tut-next" type="button" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-lg transition">
+                        ${nextTutItem ? `下一步：解锁【${nextTutItem.name}】 ▸` : '✅ 全部明白了，完成属性教学！'}
+                    </button>
+                </div>
+            ` : '';
+
+            const attrGuidePanelHtml = (!inTut && state.showAttrGuide) ? `
+                <div class="p-3 rounded-xl bg-slate-900/95 border border-sky-500/50 space-y-2 text-[11px] text-slate-200">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                        <span class="font-black text-sky-400">📖 全属性作用与战斗交互说明</span>
+                        <button id="btn-close-attr-guide" type="button" class="text-[10px] text-slate-400 hover:text-white px-1.5">收起 ▴</button>
+                    </div>
+                    <div class="space-y-1.5 leading-relaxed">
+                        ${ATTR_TUTORIAL_STEPS.map(item => `
+                            <div class="p-2 rounded-lg bg-slate-950/90 border border-slate-800">
+                                <span class="font-black text-amber-300">${item.icon} ${item.name}：</span>
+                                <span class="text-slate-300">${item.desc}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
 
             const skillsHtml = p.learnedSkills.length > 0
                 ? p.learnedSkills.map(s => {
@@ -13681,20 +14410,32 @@
                 : '<span class="text-xs text-slate-500">暂无额外祝福状态</span>';
 
             body.innerHTML = `
-                <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-                        <span class="font-black text-amber-400">${p.className} Lv.${p.level}（经验 ${p.exp}/${p.maxExp}）</span>
-                        <span class="text-slate-400">能量：${p.energyName || '精力'}</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 pt-1">
-                        <div>生命值：<b class="text-rose-400">${p.hp} / ${d.maxHp}</b></div>
-                        <div>${p.energyName || '精力'}值：<b class="text-sky-400">${p.mp} / ${d.maxMp}</b></div>
-                        <div>攻击力：<b class="text-slate-100">${d.atk}</b> ${p.bonusAtk > 0 ? `<span class="text-emerald-400">(+${p.bonusAtk})</span>` : ''}</div>
-                        <div>防御力：<b class="text-slate-100">${d.def}</b></div>
-                        <div>速度：<b class="text-slate-100">${d.spd}</b></div>
-                        <div>精神强度：<b class="text-slate-100">${d.spi}</b></div>
-                        <div>命中：<b class="text-slate-100">${d.hit}</b></div>
-                        <div>闪避：<b class="text-slate-100">${d.eva}</b></div>
+                <div id="char-stats-section" class="space-y-3">
+                    ${tutorialBannerHtml}
+                    <div class="p-3.5 rounded-xl bg-slate-950 border ${inTut ? 'border-amber-500/60' : 'border-slate-800'} space-y-2 text-xs">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 gap-2">
+                            <span class="font-black text-amber-400 truncate">${p.className} Lv.${p.level}（经验 ${p.exp}/${p.maxExp}）</span>
+                            ${!inTut ? `
+                                <button id="btn-toggle-attr-guide" type="button" class="px-2 py-0.5 rounded-lg text-[10px] font-black border flex-shrink-0 transition ${
+                                    state.showAttrGuide
+                                        ? 'bg-sky-500 text-slate-950 border-sky-400'
+                                        : 'bg-slate-800 hover:bg-slate-700 text-sky-300 border-sky-500/40'
+                                }">
+                                    📖 ${state.showAttrGuide ? '收起介绍' : '属性介绍'}
+                                </button>
+                            ` : `<span class="text-[10px] text-amber-300 font-bold flex-shrink-0">逐项解锁中...</span>`}
+                        </div>
+                        ${attrGuidePanelHtml}
+                        <div class="grid grid-cols-2 gap-1.5 pt-1">
+                            ${renderAttrCell(0, '生命值', `<b class="text-rose-400">${p.hp} / ${d.maxHp}</b>`)}
+                            ${renderAttrCell(1, `${p.energyName || '精力'}值`, `<b class="text-sky-400">${p.mp} / ${d.maxMp}</b>`)}
+                            ${renderAttrCell(2, '攻击力', `<b class="text-slate-100">${d.atk}</b>${p.bonusAtk > 0 ? ` <span class="text-emerald-400">(+${p.bonusAtk})</span>` : ''}`)}
+                            ${renderAttrCell(3, '防御力', `<b class="text-slate-100">${d.def}</b>`)}
+                            ${renderAttrCell(4, '速度', `<b class="text-slate-100">${d.spd}</b>`)}
+                            ${renderAttrCell(5, '精神强度', `<b class="text-slate-100">${d.spi}</b>`)}
+                            ${renderAttrCell(6, '命中', `<b class="text-slate-100">${d.hit}</b>`)}
+                            ${renderAttrCell(7, '闪避', `<b class="text-slate-100">${d.eva}</b>`)}
+                        </div>
                     </div>
                 </div>
 
@@ -13746,6 +14487,39 @@
                 </div>
             `;
 
+            const nextTutBtn = document.getElementById('btn-attr-tut-next');
+            if (nextTutBtn) {
+                nextTutBtn.onclick = () => {
+                    playClickSfx();
+                    if (state.attrTutorialStep + 1 < ATTR_TUTORIAL_STEPS.length) {
+                        state.attrTutorialStep += 1;
+                        renderCharModal();
+                    } else {
+                        state.attrTutorialStep = -1;
+                        try { localStorage.setItem('RG_ATTR_TUTORIAL_DONE', '1'); } catch (e) {}
+                        renderCharModal();
+                        showToast('🎉 属性教学完成！今后随时可点面板右上角【📖 属性介绍】再次查看！');
+                    }
+                };
+            }
+
+            const toggleGuideBtn = document.getElementById('btn-toggle-attr-guide');
+            if (toggleGuideBtn) {
+                toggleGuideBtn.onclick = () => {
+                    playClickSfx();
+                    state.showAttrGuide = !state.showAttrGuide;
+                    renderCharModal();
+                };
+            }
+            const closeGuideBtn = document.getElementById('btn-close-attr-guide');
+            if (closeGuideBtn) {
+                closeGuideBtn.onclick = () => {
+                    playClickSfx();
+                    state.showAttrGuide = false;
+                    renderCharModal();
+                };
+            }
+
             body.querySelectorAll('.btn-add-stat').forEach(btn => {
                 btn.onclick = () => {
                     if (p.freePoints <= 0) return;
@@ -13769,13 +14543,6 @@
             });
         }
 
-        // 物品栏弹窗渲染（支持精英专属技能书：直接学/升该技能，或不想学时指定任意已学技能升1级）
-        // =====================================================================
-        // 【可选小优化：约第 5930～6150 行（让背包里的技能书支持进阶职业 6 级上限与【奇怪的异能】）】
-        // 1. 搜索关键词：function renderBagModal() { （全文件唯一）
-        // 2. 选中范围：从 function renderBagModal() { 开始，往下选中到 const btnThorns = document.getElementById('btn-learn-thorns'); 的正上方为止
-        // 3. 替换为以下代码：
-        // =====================================================================
         function renderBagModal() {
             const run = state.run;
             if (!run) return;
@@ -14583,7 +15350,12 @@
                 renderCharModal();
                 charModal.classList.remove('hidden');
             };
-            document.getElementById('btn-close-char-modal').onclick = () => charModal.classList.add('hidden');
+            document.getElementById('btn-close-char-modal').onclick = () => {
+                if (typeof state.attrTutorialStep === 'number' && state.attrTutorialStep >= 0) {
+                    return showToast('📘 请先点击【下一步】完成属性教学哦（仅此一次）！');
+                }
+                charModal.classList.add('hidden');
+            };
 
             const bagModal = document.getElementById('bag-modal');
             const openBagBtn = document.getElementById('btn-open-bag-modal');
