@@ -7389,11 +7389,26 @@
                 });
                 addBattleLog(battle, `💚 【群体治疗 Lv.${sk.level}】（消耗${cost}圣力）回复了己方全体 ${healAmt} 点生命值！`);
             } else if (sk.id === 'empower') {
+                const oldEmpMult = 1 + (battle.empowerTurns > 0 ? (battle.empowerPct || 0) / 100 : 0);
                 battle.empowerTurns = 999;
                 const stackGain = 50 * sk.level;
                 battle.empowerStacks = Math.min(3, (battle.empowerStacks || 0) + 1);
                 battle.empowerPct = battle.empowerStacks * stackGain;
-                addBattleLog(battle, `⬆️ 【强化 Lv.${sk.level}】（第 ${battle.empowerStacks}/3 层）：己方全体全属性累计提升 +${battle.empowerPct}%！`);
+                const newEmpMult = 1 + battle.empowerPct / 100;
+
+                // 同步提升场上所有存活召唤物的生命上限与当前生命（攻/防/速/命通过 empMult 实时生效）
+                if (newEmpMult > oldEmpMult) {
+                    const ratio = newEmpMult / oldEmpMult;
+                    getAliveSummons(battle).forEach(s => {
+                        const oldMax = s.maxHp;
+                        s.maxHp = Math.round(s.maxHp * ratio);
+                        s.hp = Math.min(s.maxHp, s.hp + Math.max(0, s.maxHp - oldMax));
+                        if (s.baseEnhanceStats) {
+                            s.baseEnhanceStats.maxHp = Math.round(s.baseEnhanceStats.maxHp * ratio);
+                        }
+                    });
+                }
+                addBattleLog(battle, `⬆️ 【强化 Lv.${sk.level}】（第 ${battle.empowerStacks}/3 层）：己方全体（含所有召唤物）全属性累计提升 +${battle.empowerPct}%！`);
             } else if (sk.id === 'stealth') {
                 battle.stealthTurns = 2;
                 battle.stealthLv = sk.level;
@@ -9788,7 +9803,8 @@
                         playSingleImpactVfx(pRect, 'arcane_beam', `💥 魂力 -${pDmg}`);
                         const actual = applyIncomingDamageToPlayer(battle, pDmg, m);
                         aliveSummons.forEach(s => {
-                            const sDmg = calcDamageWithDefense(rawBurst, s.def, false, 1.0);
+                            const sEmpMult = 1 + (battle.empowerTurns > 0 ? battle.empowerPct / 100 : 0);
+                            const sDmg = calcDamageWithDefense(rawBurst, Math.round(s.def * sEmpMult), false, 1.0);
                             s.hp = Math.max(0, s.hp - sDmg);
                         });
                         addBattleLog(battle, `💥 【${m.name}】释放【魂力爆发 Lv.${skillLv}】（耗${Math.round(costPct * 100)}%蓝×${convertMult.toFixed(1)}倍${isSingleTarget ? '，单体2倍' : ''}），对你造成 ${actual} 点伤害！`);
@@ -9901,7 +9917,8 @@
                         if (m.id === 'skeleton_king' || m.id === 'bandit_chief' || m.id === 'visiting_demon_king' || m.id === 'bone_emperor') {
                             const cleaveLabel = m.id === 'visiting_demon_king' ? '大掌' : (m.id === 'bone_emperor' ? '力大飞砖' : '大剑');
                             getAliveSummons(battle).forEach(s => {
-                                const sDmg = calcDamageWithDefense(rawBasic, s.def, false, finalHitMult);
+                                const sEmpMult = 1 + (battle.empowerTurns > 0 ? battle.empowerPct / 100 : 0);
+                                const sDmg = calcDamageWithDefense(rawBasic, Math.round(s.def * sEmpMult), false, finalHitMult);
                                 s.hp = Math.max(0, s.hp - sDmg);
                                 addBattleLog(battle, `🗡️ 【${m.name}】【${cleaveLabel}】顺劈【${s.name}】造成 ${sDmg} 点伤害！`);
                             });
@@ -12639,9 +12656,14 @@
             const summonsBox = document.getElementById('hud-summons-box');
             if (summonsBox) {
                 if (run.battle && run.battle.summons && run.battle.summons.length > 0) {
+                    const sEmpMult = 1 + (run.battle.empowerTurns > 0 ? (run.battle.empowerPct || 0) / 100 : 0);
+                    const combatSpd = getCombatPlayerStats(run.battle).spd;
                     summonsBox.innerHTML = run.battle.summons.map(s => {
                         const isAlive = s.hp > 0;
                         const isControlling = run.battle.activeActorUid === s.uid && isAlive;
+                        const dispAtk = Math.round(s.atk * sEmpMult);
+                        const dispSpd = s.type === 'paladin' ? combatSpd : Math.round(s.spd * sEmpMult);
+                        const empTag = sEmpMult > 1 ? ' text-emerald-300 font-bold' : '';
                         return `
                             <div data-sum-uid="${s.uid}" class="hud-summon-card p-1.5 rounded-lg border text-[10px] cursor-pointer transition ${
                                 !isAlive
@@ -12654,7 +12676,7 @@
                                 </div>
                                 <div class="flex items-center justify-between text-[9px] text-slate-400 mt-0.5">
                                     <span>HP:${s.hp}/${s.maxHp}</span>
-                                    <span>攻:${s.atk} 速:${s.spd}</span>
+                                    <span class="${empTag}">攻:${dispAtk} 速:${dispSpd}</span>
                                 </div>
                             </div>
                         `;
