@@ -932,6 +932,45 @@
                 </div>
             </div>
         </div>
+        <!-- 【实时收到 PvP 切磋邀请】顶部悬浮提示条 -->
+        <div id="pvp-invite-banner" class="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-[70] hidden p-3.5 rounded-2xl bg-slate-900/95 border-2 border-amber-400 shadow-2xl space-y-2.5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-amber-400">⚔️ 收到好友切磋邀请！</span>
+                <span id="pvp-invite-mode-badge" class="text-[10px] px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-500/50 font-black">1v1</span>
+            </div>
+            <p id="pvp-invite-text" class="text-xs text-slate-200 leading-relaxed">玩家向你发起了切磋邀请！</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="btn-pvp-decline-invite" type="button" class="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs">拒绝</button>
+                <button id="btn-pvp-accept-invite" type="button" class="py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow">✅ 接受并进房</button>
+            </div>
+        </div>
+
+        <!-- 【实时 PvP 切磋系统】全功能弹窗（大厅在线列表 / 切磋排行 / 战前10级10书准备 / 实时1v1·2v2战斗） -->
+        <div id="pvp-modal" class="fixed inset-0 bg-black/85 z-[58] hidden flex items-center justify-center p-3">
+            <div class="w-full max-w-md h-[90vh] max-h-[860px] bg-slate-900 border border-amber-500/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-950 flex-shrink-0">
+                    <div>
+                        <h2 id="pvp-modal-title" class="text-sm font-black text-amber-400">⚔️ 好友切磋 · 实时联机 PvP</h2>
+                        <p id="pvp-modal-sub" class="text-[11px] text-slate-400 mt-0.5">支持 1v1 / 2v2 · 开局 Lv.10 + 10 本自选技能书</p>
+                    </div>
+                    <button id="btn-close-pvp-modal" type="button" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">✕</button>
+                </div>
+
+                <!-- 顶部标签栏（在大厅界面显示：在线邀请 / 切磋排行榜） -->
+                <div id="pvp-lobby-tabs" class="px-3.5 py-2.5 bg-slate-950/90 border-b border-slate-800 grid grid-cols-2 gap-2 flex-shrink-0">
+                    <button id="tab-pvp-online" type="button" class="py-2 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow">
+                        🟢 在线玩家与邀请
+                    </button>
+                    <button id="tab-pvp-rank" type="button" class="py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">
+                        🏆 切磋排行榜
+                    </button>
+                </div>
+
+                <!-- 主内容滚动区 -->
+                <div id="pvp-modal-body" class="scroll-container flex-1 overflow-y-auto p-3.5 space-y-3">
+                </div>
+            </div>
+        </div>
 
         <!-- 轻提示弹窗 -->
         <div id="message-toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2.5 rounded-xl bg-slate-800/95 border border-amber-500/50 text-xs text-amber-200 font-medium shadow-2xl whitespace-nowrap">
@@ -14213,6 +14252,29 @@
                 `;
                 container.appendChild(card);
             });
+
+            // 首页关卡最下方：实时 PvP【切磋邀请】入口卡片
+            const pvpCard = document.createElement('div');
+            pvpCard.className = 'p-4 rounded-2xl border-2 border-rose-500/60 bg-gradient-to-r from-rose-950/60 via-slate-900 to-amber-950/40 hover:border-amber-400 transition cursor-pointer flex items-center justify-between shadow-lg';
+            pvpCard.onclick = () => {
+                playClickSfx();
+                if (typeof window.__openPvpModal === 'function') {
+                    window.__openPvpModal('online');
+                } else {
+                    showToast('联机模块初始化中，请稍候...');
+                }
+            };
+            pvpCard.innerHTML = `
+                <div class="space-y-1 pr-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-black text-amber-400">⚔️ 切磋邀请（1v1 / 2v2）</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-md font-bold bg-rose-950 text-rose-300 border border-rose-500/50">实时联机</span>
+                    </div>
+                    <p class="text-xs text-slate-300">查看在线好友并发起 1v1 / 2v2 切磋 · 开局 Lv.10 + 10 本自选书 · 每日/每月切磋榜</p>
+                </div>
+                <div class="flex-shrink-0 text-xs font-black text-amber-400">进入 ▸</div>
+            `;
+            container.appendChild(pvpCard);
         }
 
         function openMonsterInspectModal(m) {
@@ -15493,7 +15555,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCorxE4e7KGsRuaoHUN2wJhabPTb6KFKoI",
@@ -16152,6 +16214,1205 @@
                 window.__openAndFetchLeaderboard();
                 showToast('🔄 已刷新全服排行榜（最高纪录已锁定保护）！');
             };
+            // =========================================================================
+            // 九、 实时联机 PvP 系统（在线列表 / 1v1·2v2 邀请 / 10级10书准备 / 战斗 / 日月榜）
+            // =========================================================================
+            function getPvpMyId() {
+                if (auth.currentUser && !auth.currentUser.isAnonymous) return auth.currentUser.uid;
+                if (state.userAccount) return `acc_${encodeURIComponent(state.userAccount)}`;
+                try {
+                    let gid = localStorage.getItem('RG_PVP_GUEST_ID');
+                    if (!gid) {
+                        gid = 'guest_' + Math.random().toString(36).slice(2, 8);
+                        localStorage.setItem('RG_PVP_GUEST_ID', gid);
+                    }
+                    return gid;
+                } catch (e) {
+                    return 'guest_temp';
+                }
+            }
+
+            function getPvpMyName() {
+                if (state.userAccount) return getPlayerDisplayName();
+                return '游客_' + getPvpMyId().slice(-4);
+            }
+
+            function getTodayDateKey() {
+                const n = new Date();
+                return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+            }
+
+            function getThisMonthKey() {
+                const n = new Date();
+                return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
+            }
+
+            const pvpState = {
+                view: 'lobby', // 'lobby' | 'room'
+                lobbyTab: 'online', // 'online' | 'rank'
+                rankPeriod: 'daily', // 'daily' | 'monthly'
+                inviteMode: '1v1', // '1v1' | '2v2'
+                onlinePlayers: [],
+                roomId: null,
+                roomData: null,
+                roomUnsub: null,
+                inviteUnsub: null,
+                pendingInvite: null,
+                prepBookMode: null, // 'learn' | 'upgrade' | null
+                selectedTargetId: null,
+                recordedWinRoomId: null,
+                rankList: []
+            };
+
+            // 1. 在线心跳（每 25 秒上报一次，75 秒内活跃均显示为在线）
+            async function sendOnlineHeartbeat() {
+                try {
+                    await ensureCloudAuth();
+                    const myId = getPvpMyId();
+                    await setDoc(doc(db, 'pvp_online', myId), {
+                        playerId: myId,
+                        playerName: getPvpMyName(),
+                        titleId: state.equippedAchievementId || null,
+                        status: pvpState.roomId ? (pvpState.roomData?.phase === 'battle' ? 'in_battle' : 'in_room') : 'idle',
+                        lastSeen: Date.now()
+                    }, { merge: true });
+                } catch (e) {}
+            }
+
+            // 2. 监听发给自己的实时邀请
+            async function startListenMyInvites() {
+                await ensureCloudAuth();
+                const myId = getPvpMyId();
+                if (pvpState.inviteUnsub) pvpState.inviteUnsub();
+                pvpState.inviteUnsub = onSnapshot(doc(db, 'pvp_invites', myId), (snap) => {
+                    const banner = document.getElementById('pvp-invite-banner');
+                    if (!snap.exists()) {
+                        if (banner) banner.classList.add('hidden');
+                        return;
+                    }
+                    const inv = snap.data();
+                    const isFresh = inv && inv.status === 'pending' && (Date.now() - (inv.createdAt || 0) < 65000);
+                    if (isFresh && inv.roomId && inv.roomId !== pvpState.roomId) {
+                        pvpState.pendingInvite = inv;
+                        document.getElementById('pvp-invite-mode-badge').textContent = inv.mode === '2v2' ? '2v2 组队切磋' : '1v1 单挑切磋';
+                        document.getElementById('pvp-invite-text').textContent = `【${inv.fromName}】邀请你加入房间 ${inv.roomId} 进行 ${inv.mode} 切磋！`;
+                        if (banner) banner.classList.remove('hidden');
+                        playBattleSfx('levelup');
+                    } else {
+                        if (banner) banner.classList.add('hidden');
+                    }
+                });
+            }
+
+            // 延时启动心跳与邀请监听
+            setTimeout(() => {
+                sendOnlineHeartbeat();
+                startListenMyInvites();
+                setInterval(() => {
+                    if (!document.hidden) sendOnlineHeartbeat();
+                }, 25000);
+            }, 1500);
+
+            document.getElementById('btn-pvp-decline-invite').onclick = async () => {
+                playClickSfx();
+                document.getElementById('pvp-invite-banner').classList.add('hidden');
+                try {
+                    await setDoc(doc(db, 'pvp_invites', getPvpMyId()), { status: 'declined' }, { merge: true });
+                } catch (e) {}
+                pvpState.pendingInvite = null;
+            };
+
+            document.getElementById('btn-pvp-accept-invite').onclick = async () => {
+                playClickSfx();
+                document.getElementById('pvp-invite-banner').classList.add('hidden');
+                const inv = pvpState.pendingInvite;
+                pvpState.pendingInvite = null;
+                if (!inv || !inv.roomId) return;
+                try {
+                    await setDoc(doc(db, 'pvp_invites', getPvpMyId()), { status: 'accepted' }, { merge: true });
+                } catch (e) {}
+                document.getElementById('pvp-modal').classList.remove('hidden');
+                await joinPvpRoom(inv.roomId);
+            };
+
+            // 3. 构建 PvP 角色初始数据（Lv.10 + 满级自由点 + 10本自选书）
+            function buildPvpPlayerData(classId = 'freelancer', team = 'A') {
+                const tempP = initPlayerStats(null, classId, 10);
+                // 强制确保所有职业（含初阶与散人）在 PvP 中都直接提升至 10 级！
+                const cls = getClassConfig(classId);
+                const dimPerLv = (cls.isHighTier || cls.isAdvanced) ? 2 : 1;
+                const freePerLv = cls.isHighTier ? 10 : (cls.isAdvanced ? 7 : 5);
+                tempP.level = 10;
+                tempP.str = cls.initDims.str + 9 * dimPerLv;
+                tempP.vit = cls.initDims.vit + 9 * dimPerLv;
+                tempP.agi = cls.initDims.agi + 9 * dimPerLv;
+                tempP.int = cls.initDims.int + 9 * dimPerLv;
+                tempP.wis = cls.initDims.wis + 9 * dimPerLv;
+                tempP.bonusHp = 9 * 100;
+                tempP.freePoints = 9 * freePerLv;
+                const d = computePlayerDerived(tempP);
+
+                return {
+                    id: getPvpMyId(),
+                    name: getPvpMyName(),
+                    titleId: state.equippedAchievementId || null,
+                    team,
+                    ready: false,
+                    classId: cls.id,
+                    className: cls.name,
+                    energyName: cls.energyName,
+                    level: 10,
+                    str: tempP.str,
+                    vit: tempP.vit,
+                    agi: tempP.agi,
+                    int: tempP.int,
+                    wis: tempP.wis,
+                    bonusHp: tempP.bonusHp,
+                    bonusMp: 0,
+                    bonusAtk: 0,
+                    bonusDef: 0,
+                    bonusSpd: 0,
+                    bonusSpi: 0,
+                    freePoints: tempP.freePoints,
+                    selectBooksLeft: 10,
+                    learnedSkills: tempP.learnedSkills,
+                    hp: d.maxHp,
+                    maxHp: d.maxHp,
+                    mp: d.maxMp,
+                    maxMp: d.maxMp,
+                    atk: d.atk,
+                    def: d.def,
+                    spd: d.spd,
+                    spi: d.spi,
+                    hit: d.hit,
+                    eva: d.eva,
+                    shield: 0,
+                    shieldDef: 0,
+                    defStance: false,
+                    thornsTurns: 0,
+                    thornsLv: 1,
+                    stealthTurns: cls.id === 'assassin' || cls.id === 'shadow_assassin' ? 1 : 0,
+                    frenzyTurns: 0,
+                    frenzyAtkPct: 0,
+                    empowerPct: 0,
+                    bleedStacks: 0,
+                    bleedDmg: 0,
+                    poisonStacks: 0,
+                    erosionStacks: 0,
+                    erosionTurns: 0,
+                    speedAcc: 0
+                };
+            }
+
+            function recalcPvpPlayerDerived(pl) {
+                const d = computePlayerDerived({
+                    ...pl,
+                    talentId: null,
+                    talentIds: [],
+                    spdPctBonus: 0,
+                    expMultBonus: 0
+                });
+                pl.maxHp = d.maxHp;
+                pl.maxMp = d.maxMp;
+                pl.hp = d.maxHp;
+                pl.mp = d.maxMp;
+                pl.atk = d.atk;
+                pl.def = d.def;
+                pl.spd = d.spd;
+                pl.spi = d.spi;
+                pl.hit = d.hit;
+                pl.eva = d.eva;
+            }
+
+            // 4. 拉取在线玩家列表
+            async function fetchOnlinePlayers() {
+                try {
+                    await ensureCloudAuth();
+                    await sendOnlineHeartbeat();
+                    const snap = await getDocs(collection(db, 'pvp_online'));
+                    const now = Date.now();
+                    const myId = getPvpMyId();
+                    const list = [];
+                    snap.forEach(docSnap => {
+                        const d = docSnap.data();
+                        if (d && d.playerId && (now - (d.lastSeen || 0) < 75000)) {
+                            list.push({ ...d, isMe: d.playerId === myId });
+                        }
+                    });
+                    list.sort((a, b) => (a.isMe ? -1 : (b.isMe ? 1 : (b.lastSeen - a.lastSeen))));
+                    pvpState.onlinePlayers = list;
+                } catch (e) {
+                    pvpState.onlinePlayers = [];
+                }
+            }
+
+            // 5. 拉取每日 / 每月切磋胜场排行榜
+            async function fetchPvpLeaderboard() {
+                try {
+                    await ensureCloudAuth();
+                    const snap = await getDocs(collection(db, 'pvp_leaderboard'));
+                    const today = getTodayDateKey();
+                    const month = getThisMonthKey();
+                    const myId = getPvpMyId();
+                    const arr = [];
+                    snap.forEach(docSnap => {
+                        const d = docSnap.data();
+                        if (!d || !d.playerName) return;
+                        const dWins = d.dailyDate === today ? (d.dailyWins || 0) : 0;
+                        const mWins = d.monthlyKey === month ? (d.monthlyWins || 0) : 0;
+                        arr.push({
+                            playerId: docSnap.id,
+                            playerName: d.playerName,
+                            titleId: d.titleId || null,
+                            dailyWins: dWins,
+                            monthlyWins: mWins,
+                            totalWins: d.totalWins || 0,
+                            isMe: docSnap.id === myId
+                        });
+                    });
+                    pvpState.rankList = arr;
+                } catch (e) {
+                    pvpState.rankList = [];
+                }
+            }
+
+            // 6. 记录切磋胜场（每日 +1、每月 +1）
+            async function recordMyPvpVictory(roomId) {
+                if (pvpState.recordedWinRoomId === roomId) return;
+                pvpState.recordedWinRoomId = roomId;
+                try {
+                    await ensureCloudAuth();
+                    const myId = getPvpMyId();
+                    const ref = doc(db, 'pvp_leaderboard', myId);
+                    const snap = await getDoc(ref);
+                    const today = getTodayDateKey();
+                    const month = getThisMonthKey();
+                    let dailyWins = 1;
+                    let monthlyWins = 1;
+                    let totalWins = 1;
+                    if (snap.exists()) {
+                        const old = snap.data();
+                        dailyWins = old.dailyDate === today ? (old.dailyWins || 0) + 1 : 1;
+                        monthlyWins = old.monthlyKey === month ? (old.monthlyWins || 0) + 1 : 1;
+                        totalWins = (old.totalWins || 0) + 1;
+                    }
+                    await setDoc(ref, {
+                        playerId: myId,
+                        playerName: getPvpMyName(),
+                        titleId: state.equippedAchievementId || null,
+                        dailyDate: today,
+                        dailyWins,
+                        monthlyKey: month,
+                        monthlyWins,
+                        totalWins,
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                    showToast(`🏆 切磋胜利！今日胜场 ${dailyWins} / 本月胜场 ${monthlyWins}，已同步至切磋排行榜！`);
+                } catch (e) {}
+            }
+
+            // 7. 创建房间 / 发送邀请 / 加入房间
+            async function createPvpRoom(mode = '1v1', inviteTarget = null) {
+                await ensureCloudAuth();
+                const roomId = String(Math.floor(1000 + Math.random() * 9000));
+                const myId = getPvpMyId();
+                const myPlayer = buildPvpPlayerData('freelancer', 'A');
+                const roomPayload = {
+                    roomId,
+                    mode,
+                    hostId: myId,
+                    phase: 'prep',
+                    round: 1,
+                    turnPlayerId: null,
+                    winnerTeam: null,
+                    players: { [myId]: myPlayer },
+                    logs: [`⚔️ 房间 ${roomId}（${mode}）已创建，请先选职业、加点并使用 10 本自选技能书！`],
+                    updatedAt: Date.now()
+                };
+                await setDoc(doc(db, 'pvp_rooms', roomId), roomPayload);
+                if (inviteTarget) {
+                    await sendPvpInvite(inviteTarget.playerId, inviteTarget.playerName, roomId, mode);
+                }
+                subscribePvpRoom(roomId);
+            }
+
+            async function sendPvpInvite(targetId, targetName, roomId, mode) {
+                try {
+                    await setDoc(doc(db, 'pvp_invites', targetId), {
+                        fromId: getPvpMyId(),
+                        fromName: getPvpMyName(),
+                        roomId,
+                        mode,
+                        createdAt: Date.now(),
+                        status: 'pending'
+                    });
+                    showToast(`📨 已向【${targetName}】发送 ${mode} 切磋邀请（房间号 ${roomId}）！`);
+                } catch (e) {
+                    showToast('发送邀请失败，请稍后重试');
+                }
+            }
+
+            async function joinPvpRoom(roomId) {
+                await ensureCloudAuth();
+                const cleanId = String(roomId || '').trim();
+                if (!cleanId) return showToast('请输入 4 位房间号');
+                const ref = doc(db, 'pvp_rooms', cleanId);
+                const snap = await getDoc(ref);
+                if (!snap.exists()) return showToast(`未找到房间 ${cleanId}，请核对房间号`);
+                const data = snap.data();
+                const myId = getPvpMyId();
+                const playersObj = data.players || {};
+                const maxPlayers = data.mode === '2v2' ? 4 : 2;
+                if (!playersObj[myId]) {
+                    if (data.phase !== 'prep') return showToast('该房间已开战，无法中途加入');
+                    const curList = Object.values(playersObj);
+                    if (curList.length >= maxPlayers) return showToast('该房间人数已满！');
+                    const countA = curList.filter(x => x.team === 'A').length;
+                    const countB = curList.filter(x => x.team === 'B').length;
+                    const assignTeam = countB < countA ? 'B' : 'A';
+                    playersObj[myId] = buildPvpPlayerData('freelancer', assignTeam);
+                    await setDoc(ref, {
+                        players: playersObj,
+                        logs: [...(data.logs || []), `👋 【${getPvpMyName()}】加入了房间（分配至 ${assignTeam} 队）！`].slice(-20),
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                }
+                subscribePvpRoom(cleanId);
+            }
+
+            function subscribePvpRoom(roomId) {
+                if (pvpState.roomUnsub) pvpState.roomUnsub();
+                pvpState.roomId = roomId;
+                pvpState.view = 'room';
+                pvpState.prepBookMode = null;
+                pvpState.recordedWinRoomId = null;
+                sendOnlineHeartbeat();
+
+                pvpState.roomUnsub = onSnapshot(doc(db, 'pvp_rooms', roomId), async (snap) => {
+                    if (!snap.exists()) {
+                        showToast('房间已解散');
+                        leavePvpRoomLocal();
+                        renderPvpModal();
+                        return;
+                    }
+                    const data = snap.data();
+                    pvpState.roomData = data;
+
+                    // 检查是否全部人已准备 -> 由房主自动开启对局
+                    if (data.phase === 'prep' && data.hostId === getPvpMyId()) {
+                        const list = Object.values(data.players || {});
+                        const needCount = data.mode === '2v2' ? 4 : 2;
+                        const cntA = list.filter(x => x.team === 'A').length;
+                        const cntB = list.filter(x => x.team === 'B').length;
+                        const allReady = list.length === needCount && cntA === cntB && list.every(x => x.ready);
+                        if (allReady) {
+                            const sorted = [...list].sort((a, b) => (b.spd || 1) - (a.spd || 1));
+                            const firstId = sorted[0].id;
+                            await setDoc(doc(db, 'pvp_rooms', roomId), {
+                                phase: 'battle',
+                                round: 1,
+                                turnPlayerId: firstId,
+                                turnOrder: sorted.map(x => x.id),
+                                turnIdx: 0,
+                                logs: [...(data.logs || []), `🔥 全部玩家准备完毕！切磋正式开始！由速度最快的【${sorted[0].name}】率先行动！`].slice(-20),
+                                updatedAt: Date.now()
+                            }, { merge: true });
+                            return;
+                        }
+                    }
+
+                    // 对局结束时，胜方自动记录每日/每月胜场
+                    if (data.phase === 'finished' && data.winnerTeam) {
+                        const me = (data.players || {})[getPvpMyId()];
+                        if (me && me.team === data.winnerTeam) {
+                            playBattleSfx('win');
+                            recordMyPvpVictory(roomId);
+                        }
+                    }
+
+                    renderPvpModal();
+                });
+            }
+
+            function leavePvpRoomLocal() {
+                if (pvpState.roomUnsub) {
+                    pvpState.roomUnsub();
+                    pvpState.roomUnsub = null;
+                }
+                pvpState.roomId = null;
+                pvpState.roomData = null;
+                pvpState.view = 'lobby';
+                pvpState.selectedTargetId = null;
+                sendOnlineHeartbeat();
+            }
+
+            // 8. PvP 实时战斗动作提交（普攻 / 防御 / 主动技能）
+            async function submitPvpAction(actionType, skillId = null) {
+                const room = pvpState.roomData;
+                if (!room || room.phase !== 'battle') return;
+                const myId = getPvpMyId();
+                if (room.turnPlayerId !== myId) return showToast('还没轮到你的回合哦！');
+
+                const players = JSON.parse(JSON.stringify(room.players || {}));
+                const me = players[myId];
+                if (!me || me.hp <= 0) return;
+
+                const enemies = Object.values(players).filter(x => x.team !== me.team && x.hp > 0);
+                const allies = Object.values(players).filter(x => x.team === me.team && x.hp > 0);
+                if (enemies.length === 0) return;
+
+                let target = enemies.find(e => e.id === pvpState.selectedTargetId) || enemies[0];
+                pvpState.selectedTargetId = target.id;
+
+                const newLogs = [...(room.logs || [])];
+                const addLog = (txt) => newLogs.push(txt);
+
+                // 回合初结算自身持续负面（流血/侵蚀）
+                me.defStance = false;
+                if (me.bleedStacks > 0) {
+                    const bDmg = Math.max(1, Math.round((me.bleedDmg || 10) * me.bleedStacks));
+                    me.hp = Math.max(1, me.hp - bDmg);
+                    addLog(`🩸 【${me.name}】受流血伤害 -${bDmg}`);
+                }
+                if (me.erosionTurns > 0 && me.erosionStacks > 0) {
+                    const eDmg = Math.max(1, Math.round(25 * me.erosionStacks));
+                    me.hp = Math.max(1, me.hp - eDmg);
+                    me.erosionTurns -= 1;
+                    addLog(`🟣 【${me.name}】受魔力侵蚀 -${eDmg}`);
+                }
+
+                const effAtk = Math.round(me.atk * (1 + (me.empowerPct || 0) / 100 + (me.frenzyTurns > 0 ? (me.frenzyAtkPct || 100) / 100 : 0)));
+                const effSpi = Math.round(me.spi * (1 + (me.empowerPct || 0) / 100));
+
+                const dealPvpDmg = (defender, raw, ignoreDef = false) => {
+                    if (!defender || defender.hp <= 0) return 0;
+                    const hitRes = (me.classId === 'mind_controller')
+                        ? { isDodged: false, dmgMult: 1.0 }
+                        : resolveHitAndEvade(me.hit, defender.eva, 0);
+                    if (hitRes.isDodged) {
+                        addLog(`💨 【${defender.name}】闪避了【${me.name}】的攻击！`);
+                        return 0;
+                    }
+                    let finalRaw = raw;
+                    if (me.stealthTurns > 0) {
+                        me.stealthTurns = 0;
+                        finalRaw = Math.round(finalRaw * 2.0);
+                    }
+                    if (hasPlayerClassPassive(me, 'warrior') && me.shield > 0) {
+                        finalRaw += Math.round(me.shield * 0.20);
+                    }
+                    if (me.classId === 'knight') finalRaw += Math.round(me.hp * 0.10);
+                    if (me.classId === 'mind_controller') finalRaw += Math.max(0, defender.eva * 5);
+
+                    const defDef = Math.round(defender.def * (defender.defStance ? 2 : 1) * (1 + (defender.empowerPct || 0) / 100));
+                    const dmg = calcDamageWithDefense(finalRaw, defDef, ignoreDef || me.classId === 'sword_grandmaster', hitRes.dmgMult);
+                    if (dmg <= 0) {
+                        addLog(`🛡️ 【${me.name}】未能击穿【${defender.name}】的防御（0伤害）！`);
+                        return 0;
+                    }
+                    let rem = dmg;
+                    if (defender.shield > 0) {
+                        const abs = Math.min(defender.shield, rem);
+                        defender.shield -= abs;
+                        rem -= abs;
+                    }
+                    if (rem > 0) {
+                        if (hasPlayerClassPassive(defender, 'qigong') && defender.hp - rem < 1 && defender.mp > 0) {
+                            const need = rem - (defender.hp - 1);
+                            const absorb = Math.min(defender.mp, need);
+                            defender.mp -= absorb;
+                            rem -= absorb;
+                        }
+                        defender.hp = Math.max(0, defender.hp - rem);
+                    }
+                    // 坦克/反伤反击
+                    if (hasPlayerClassPassive(defender, 'tank') && me.hp > 0) {
+                        const cDmg = calcDamageWithDefense(defDef * 3, me.def, false, 1.0);
+                        if (cDmg > 0) {
+                            me.hp = Math.max(0, me.hp - cDmg);
+                            addLog(`🗡️ 【${defender.name}】坦克反击【${me.name}】-${cDmg}！`);
+                        }
+                    }
+                    if (defender.thornsTurns > 0 && me.hp > 0) {
+                        const tDmg = Math.max(1, Math.round(defDef * (1 + (defender.thornsLv || 1))));
+                        me.hp = Math.max(0, me.hp - tDmg);
+                        addLog(`🌵 【${defender.name}】反伤【${me.name}】-${tDmg}！`);
+                    }
+                    return dmg;
+                };
+
+                if (actionType === 'attack') {
+                    playSignatureSfx('slash_single');
+                    const hits = hasPlayerClassPassive(me, 'archer') ? 2 : 1;
+                    let total = 0;
+                    for (let i = 0; i < hits; i++) {
+                        let raw = me.classId === 'ballista' ? effAtk * 4 : effAtk;
+                        if (hasPlayerClassPassive(me, 'mage')) raw += effSpi;
+                        total += dealPvpDmg(target, raw, false);
+                    }
+                    addLog(`⚔️ 【${me.name}】普攻${hits > 1 ? '(2连发)' : ''}【${target.name}】，共造成 ${total} 点伤害！`);
+                } else if (actionType === 'defend') {
+                    playSignatureSfx('shield_up');
+                    me.defStance = true;
+                    addLog(`🛡️ 【${me.name}】进入基础防御姿态（防御力 +100%）！`);
+                } else if (actionType === 'skill' && skillId) {
+                    const sk = (me.learnedSkills || []).find(s => s.id === skillId);
+                    if (!sk) return;
+                    const cost = getSkillMpCost(me, sk);
+                    if (me.mp < cost) return showToast(`${me.energyName || '精力'}不足（需 ${cost} 点）！`);
+                    me.mp = Math.max(0, me.mp - cost);
+                    playSignatureSfx('arcane_beam');
+
+                    if (sk.id === 'holy_heal' || sk.id === 'group_heal') {
+                        const heal = Math.max(30, Math.round(effSpi * (5 + (sk.level - 1))));
+                        if (sk.id === 'group_heal') {
+                            allies.forEach(a => { a.hp = Math.min(a.maxHp, a.hp + heal); });
+                            addLog(`💚 【${me.name}】释放【群体治疗 Lv.${sk.level}】，友方全体回复 +${heal} 生命！`);
+                        } else {
+                            me.hp = Math.min(me.maxHp, me.hp + heal);
+                            addLog(`✨ 【${me.name}】释放【圣愈术 Lv.${sk.level}】，回复 +${heal} 生命！`);
+                        }
+                    } else if (sk.id === 'mana_shield' || sk.id === 'group_shield' || sk.id === 'blood_shield') {
+                        const sh = sk.id === 'mana_shield'
+                            ? Math.round(effSpi * 10)
+                            : Math.round(me.maxHp * (0.35 + (sk.level - 1) * 0.15));
+                        if (sk.id === 'group_shield') {
+                            allies.forEach(a => { a.shield = (a.shield || 0) + sh; });
+                            addLog(`🛡️ 【${me.name}】释放【群体护盾 Lv.${sk.level}】，友方全体获得 +${sh} 护盾！`);
+                        } else {
+                            me.shield = (me.shield || 0) + sh;
+                            addLog(`🛡️ 【${me.name}】释放【${sk.name} Lv.${sk.level}】，获得 +${sh} 护盾！`);
+                        }
+                    } else if (sk.id === 'empower') {
+                        const addP = 50 * sk.level;
+                        allies.forEach(a => { a.empowerPct = Math.min(300, (a.empowerPct || 0) + addP); });
+                        addLog(`⬆️ 【${me.name}】释放【强化 Lv.${sk.level}】，友方全属性 +${addP}%！`);
+                    } else if (sk.id === 'thorns') {
+                        me.defStance = true;
+                        me.thornsTurns = 5;
+                        me.thornsLv = sk.level;
+                        addLog(`🌵 【${me.name}】开启【反伤 Lv.${sk.level}】与防守姿态！`);
+                    } else if (sk.id === 'frenzy') {
+                        me.frenzyTurns = 3 + sk.level;
+                        me.frenzyAtkPct = 100 + (sk.level - 1) * 50;
+                        addLog(`🔥 【${me.name}】开启【暴怒 Lv.${sk.level}】，攻击力大幅提升！`);
+                    } else if (sk.id === 'stealth') {
+                        me.stealthTurns = 2;
+                        addLog(`🌑 【${me.name}】进入【强隐 Lv.${sk.level}】，下次攻击伤害翻倍！`);
+                    } else if (sk.id === 'contemplate_all') {
+                        me.mp = me.maxMp;
+                        addLog(`🧘 【${me.name}】释放【观想万物】，回满 100% 能量！`);
+                    } else if (['mana_bomb', 'cleave_sweep', 'mind_blast', 'micro_control'].includes(sk.id)) {
+                        const baseStat = (sk.id === 'cleave_sweep') ? effAtk : Math.max(effSpi, effAtk);
+                        const mult = 1.6 + (sk.level - 1) * 0.5;
+                        let sumD = 0;
+                        enemies.forEach(en => { sumD += dealPvpDmg(en, Math.round(baseStat * mult), false); });
+                        addLog(`💥 【${me.name}】释放群体技【${sk.name} Lv.${sk.level}】，对敌方全体共造成 ${sumD} 点伤害！`);
+                    } else if (sk.id === 'mana_erosion' || sk.id === 'wolf_bite' || sk.id === 'poison_arrow') {
+                        const baseStat = sk.id === 'mana_erosion' ? effSpi : effAtk;
+                        const dmg = dealPvpDmg(target, Math.round(baseStat * (1.2 + (sk.level - 1) * 0.4)), sk.id !== 'wolf_bite');
+                        if (sk.id === 'mana_erosion') { target.erosionStacks = (target.erosionStacks || 0) + 1; target.erosionTurns = 4; }
+                        else { target.bleedStacks = (target.bleedStacks || 0) + 1; target.bleedDmg = Math.max(10, Math.round(dmg * 0.35)); }
+                        addLog(`☠️ 【${me.name}】对【${target.name}】释放【${sk.name} Lv.${sk.level}】造成 ${dmg} 点伤害并附加持续负面！`);
+                    } else {
+                        // 通用高伤单体技能（重击/怒击/强袭/气功波/万剑/无边剑气/魔力冲击/鬼刺等）
+                        const isSpiSkill = ['ghost_spike', 'mana_impact', 'dimension_slash', 'mind_trauma'].includes(sk.id);
+                        const isMpSkill = ['qigong_wave', 'ten_thousand_swords', 'boundless_sword_qi'].includes(sk.id);
+                        const baseVal = isMpSkill
+                            ? Math.round(me.maxMp * (0.20 + sk.level * 0.08))
+                            : (isSpiSkill ? effSpi : effAtk) * (1.8 + (sk.level - 1) * 0.6);
+                        const ignoreD = ['mana_impact', 'boundless_sword_qi', 'ghost_spike'].includes(sk.id);
+                        const dmg = dealPvpDmg(target, Math.round(baseVal), ignoreD);
+                        if (sk.id === 'raging_strike' && dmg > 0) {
+                            me.hp = Math.min(me.maxHp, me.hp + Math.round(dmg * 0.5));
+                        }
+                        addLog(`⚡ 【${me.name}】释放【${sk.name} Lv.${sk.level}】命中【${target.name}】，造成 ${dmg} 点伤害！`);
+                    }
+                }
+
+                // 递减自身回合 Buff
+                if (me.thornsTurns > 0) me.thornsTurns -= 1;
+                if (me.frenzyTurns > 0) me.frenzyTurns -= 1;
+
+                // 胜负判定
+                const aliveA = Object.values(players).filter(x => x.team === 'A' && x.hp > 0);
+                const aliveB = Object.values(players).filter(x => x.team === 'B' && x.hp > 0);
+                if (aliveA.length === 0 || aliveB.length === 0) {
+                    const winTeam = aliveA.length > 0 ? 'A' : 'B';
+                    addLog(`🏆 切磋结束！【${winTeam} 队】获得最终胜利！`);
+                    await setDoc(doc(db, 'pvp_rooms', room.roomId), {
+                        players,
+                        phase: 'finished',
+                        winnerTeam: winTeam,
+                        logs: newLogs.slice(-20),
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                    return;
+                }
+
+                // 切换至下一位存活玩家
+                const order = room.turnOrder || Object.keys(players);
+                let nextIdx = ((room.turnIdx || 0) + 1) % order.length;
+                let nextRound = room.round || 1;
+                for (let step = 0; step < order.length; step++) {
+                    if (nextIdx === 0) nextRound += 1;
+                    const candId = order[nextIdx];
+                    if (players[candId] && players[candId].hp > 0) {
+                        await setDoc(doc(db, 'pvp_rooms', room.roomId), {
+                            players,
+                            round: nextRound,
+                            turnIdx: nextIdx,
+                            turnPlayerId: candId,
+                            logs: newLogs.slice(-20),
+                            updatedAt: Date.now()
+                        }, { merge: true });
+                        return;
+                    }
+                    nextIdx = (nextIdx + 1) % order.length;
+                }
+            }
+
+            // 9. 渲染 PvP 主弹窗（大厅 / 排行榜 / 战前准备 / 实时战斗）
+            function renderPvpModal() {
+                const body = document.getElementById('pvp-modal-body');
+                const tabsEl = document.getElementById('pvp-lobby-tabs');
+                const titleEl = document.getElementById('pvp-modal-title');
+                const subEl = document.getElementById('pvp-modal-sub');
+                if (!body) return;
+
+                if (pvpState.view === 'room' && pvpState.roomData) {
+                    tabsEl.classList.add('hidden');
+                    const room = pvpState.roomData;
+                    titleEl.textContent = `⚔️ 切磋房间 ${room.roomId}（${room.mode}）`;
+                    subEl.textContent = room.phase === 'prep'
+                        ? '战前准备：选职业(直达Lv.10) + 加点 + 10本自选技能书 → 全员准备自动开战'
+                        : (room.phase === 'battle' ? `第 ${room.round || 1} 回合实时对战中` : '切磋已结束');
+
+                    if (room.phase === 'prep') {
+                        renderPvpPrepView(body, room);
+                    } else {
+                        renderPvpBattleView(body, room);
+                    }
+                    return;
+                }
+
+                // 大厅视图
+                tabsEl.classList.remove('hidden');
+                titleEl.textContent = '⚔️ 好友切磋 · 实时联机 PvP';
+                subEl.textContent = `我的切磋名：${getPvpMyName()} · 开局 Lv.10 + 10 本自选技能书`;
+
+                const tabOn = document.getElementById('tab-pvp-online');
+                const tabRk = document.getElementById('tab-pvp-rank');
+                tabOn.className = pvpState.lobbyTab === 'online'
+                    ? 'py-2 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow'
+                    : 'py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700';
+                tabRk.className = pvpState.lobbyTab === 'rank'
+                    ? 'py-2 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow'
+                    : 'py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700';
+
+                if (pvpState.lobbyTab === 'online') {
+                    const onlineHtml = pvpState.onlinePlayers.length > 0
+                        ? pvpState.onlinePlayers.map(pl => `
+                            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="flex items-center space-x-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
+                                        <span class="text-xs font-black ${pl.isMe ? 'text-sky-300' : 'text-slate-100'} truncate">${pl.playerName}${pl.isMe ? ' (我)' : ''}</span>
+                                        ${buildPlayerEquippedBadgeHtml(pl.titleId)}
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">${pl.status === 'in_battle' ? '⚔️ 切磋中' : (pl.status === 'in_room' ? '⏳ 房间准备中' : '🟢 空闲在线')}</div>
+                                </div>
+                                ${pl.isMe ? '<span class="text-[10px] text-slate-500">在线</span>' : `
+                                    <div class="flex items-center space-x-1.5 flex-shrink-0">
+                                        <button data-inv-id="${pl.playerId}" data-inv-name="${pl.playerName}" data-inv-mode="1v1" class="btn-pvp-direct-inv px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px]">邀1v1</button>
+                                        <button data-inv-id="${pl.playerId}" data-inv-name="${pl.playerName}" data-inv-mode="2v2" class="btn-pvp-direct-inv px-2.5 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-slate-950 font-black text-[11px]">邀2v2</button>
+                                    </div>
+                                `}
+                            </div>
+                        `).join('')
+                        : '<div class="p-6 text-center text-xs text-slate-500">当前暂无其他在线玩家，可点上方创建房间把 4 位房间号发给朋友！</div>';
+
+                    body.innerHTML = `
+                        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 text-xs">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="btn-pvp-create-1v1" class="py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black">⚔️ 创建 1v1 房间</button>
+                                <button id="btn-pvp-create-2v2" class="py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-slate-950 font-black">🔥 创建 2v2 房间</button>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <input id="input-pvp-room-id" type="text" maxlength="4" placeholder="输入 4 位房间号加入" class="flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-100 focus:outline-none focus:border-amber-500">
+                                <button id="btn-pvp-join-room" class="px-3.5 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs">加入房间</button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between px-1">
+                            <span class="text-xs font-bold text-emerald-400">🟢 当前在线玩家（${pvpState.onlinePlayers.length} 人）</span>
+                            <button id="btn-pvp-refresh-online" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-bold">🔄 刷新在线</button>
+                        </div>
+                        <div class="space-y-2">${onlineHtml}</div>
+                    `;
+
+                    document.getElementById('btn-pvp-create-1v1').onclick = () => { playClickSfx(); createPvpRoom('1v1'); };
+                    document.getElementById('btn-pvp-create-2v2').onclick = () => { playClickSfx(); createPvpRoom('2v2'); };
+                    document.getElementById('btn-pvp-join-room').onclick = () => {
+                        playClickSfx();
+                        joinPvpRoom(document.getElementById('input-pvp-room-id').value);
+                    };
+                    document.getElementById('btn-pvp-refresh-online').onclick = async () => {
+                        playClickSfx();
+                        await fetchOnlinePlayers();
+                        renderPvpModal();
+                        showToast('🔄 已刷新在线玩家列表');
+                    };
+                    body.querySelectorAll('.btn-pvp-direct-inv').forEach(btn => {
+                        btn.onclick = () => {
+                            playClickSfx();
+                            const tid = btn.getAttribute('data-inv-id');
+                            const tname = btn.getAttribute('data-inv-name');
+                            const mode = btn.getAttribute('data-inv-mode');
+                            createPvpRoom(mode, { playerId: tid, playerName: tname });
+                        };
+                    });
+                } else {
+                    // 切磋排行榜（每日 / 每月胜利次数排名）
+                    const isDaily = pvpState.rankPeriod === 'daily';
+                    const sorted = [...pvpState.rankList]
+                        .filter(x => (isDaily ? x.dailyWins : x.monthlyWins) > 0 || x.isMe)
+                        .sort((a, b) => isDaily ? (b.dailyWins - a.dailyWins) : (b.monthlyWins - a.monthlyWins));
+
+                    body.innerHTML = `
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="btn-pvp-rank-daily" class="py-2 rounded-xl text-xs font-black ${isDaily ? 'bg-sky-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-300 border border-slate-700'}">📅 每日胜场榜（${getTodayDateKey()}）</button>
+                            <button id="btn-pvp-rank-monthly" class="py-2 rounded-xl text-xs font-black ${!isDaily ? 'bg-sky-500 text-slate-950 shadow' : 'bg-slate-800 text-slate-300 border border-slate-700'}">🗓️ 每月胜场榜（${getThisMonthKey()}）</button>
+                        </div>
+                        <div class="space-y-2">
+                            ${sorted.length === 0
+                                ? '<div class="p-6 text-center text-xs text-slate-500">本期暂无切磋胜场记录，快邀请好友打一局抢占榜首！</div>'
+                                : sorted.map((it, i) => {
+                                    const wins = isDaily ? it.dailyWins : it.monthlyWins;
+                                    const badge = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : `#${i + 1}`));
+                                    return `
+                                        <div class="p-3 rounded-xl border ${it.isMe ? 'border-sky-400 bg-sky-950/30' : 'border-slate-800 bg-slate-950'} flex items-center justify-between">
+                                            <div class="flex items-center space-x-2.5 min-w-0">
+                                                <span class="w-7 h-7 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs font-black text-amber-400">${badge}</span>
+                                                <div class="min-w-0">
+                                                    <div class="text-xs font-black text-slate-100 truncate">${it.playerName}${it.isMe ? ' (我)' : ''} ${buildPlayerEquippedBadgeHtml(it.titleId)}</div>
+                                                    <div class="text-[10px] text-slate-400">历史总胜场：${it.totalWins} 胜</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right flex-shrink-0">
+                                                <div class="text-sm font-black text-amber-400">${wins} 胜</div>
+                                                <div class="text-[10px] text-slate-400">${isDaily ? '今日胜场' : '本月胜场'}</div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')
+                            }
+                        </div>
+                    `;
+                    document.getElementById('btn-pvp-rank-daily').onclick = () => { playClickSfx(); pvpState.rankPeriod = 'daily'; renderPvpModal(); };
+                    document.getElementById('btn-pvp-rank-monthly').onclick = () => { playClickSfx(); pvpState.rankPeriod = 'monthly'; renderPvpModal(); };
+                }
+            }
+
+            // 10. 渲染战前准备大厅（选职业 -> Lv.10加点 -> 10本自选书 -> 全员准备开战）
+            function renderPvpPrepView(body, room) {
+                const myId = getPvpMyId();
+                const playersObj = room.players || {};
+                const me = playersObj[myId];
+                if (!me) return;
+
+                const teamA = Object.values(playersObj).filter(x => x.team === 'A');
+                const teamB = Object.values(playersObj).filter(x => x.team === 'B');
+                const maxPerTeam = room.mode === '2v2' ? 2 : 1;
+                const unlockedList = CLASSES.filter(c => c.unlockedDefault || state.unlockedClasses[c.id]);
+
+                const cls = getClassConfig(me.classId);
+                const isWanfa = me.classId === 'wanfa_tianzun';
+                const canLearn = (sk) => isWanfa || me.classId === 'freelancer' || !sk.allowedClasses || sk.allowedClasses.includes(me.classId) || (cls && cls.baseClassId && sk.allowedClasses.includes(cls.baseClassId));
+                const pool = Object.values(isWanfa ? ALL_SKILLS : PUBLIC_SKILLS).filter(canLearn);
+                const unlearned = pool.filter(sk => !(me.learnedSkills || []).some(s => s.id === sk.id));
+                const upgradable = (me.learnedSkills || []).filter(s => s.level < getSkillMaxLevelCap(me, s));
+
+                const renderSlot = (arr, label, color) => `
+                    <div class="p-2.5 rounded-xl bg-slate-950 border ${color} space-y-1.5">
+                        <div class="text-[11px] font-black text-slate-200">${label}（${arr.length}/${maxPerTeam}）</div>
+                        ${arr.map(x => `
+                            <div class="flex items-center justify-between text-[11px] bg-slate-900 px-2 py-1 rounded-lg">
+                                <span class="truncate font-bold text-slate-100">${x.name} <span class="text-amber-400">[${x.className}]</span></span>
+                                <span class="${x.ready ? 'text-emerald-400 font-black' : 'text-slate-500'}">${x.ready ? '✅已准备' : '配置中'}</span>
+                            </div>
+                        `).join('')}
+                        ${arr.length < maxPerTeam ? `<div class="text-[10px] text-slate-500 text-center py-1">等待好友加入...</div>` : ''}
+                    </div>
+                `;
+
+                const otherOnline = pvpState.onlinePlayers.filter(x => !x.isMe && !playersObj[x.playerId]);
+
+                body.innerHTML = `
+                    <!-- 双方队伍槽位 -->
+                    <div class="grid grid-cols-2 gap-2">
+                        ${renderSlot(teamA, '🔵 A 队', 'border-sky-500/40')}
+                        ${renderSlot(teamB, '🔴 B 队', 'border-rose-500/40')}
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2 text-[11px]">
+                        <span class="text-slate-400">房间号：<b class="text-amber-400 text-sm">${room.roomId}</b></span>
+                        <div class="flex items-center space-x-1.5">
+                            ${room.mode === '2v2' && !me.ready ? `<button id="btn-pvp-switch-team" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-bold">🔄 换队</button>` : ''}
+                            <button id="btn-pvp-leave-room" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-950 text-rose-300 border border-slate-700 font-bold">退出房间</button>
+                        </div>
+                    </div>
+
+                    ${otherOnline.length > 0 ? `
+                        <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                            <div class="text-[11px] font-bold text-emerald-400">📨 邀请其他在线玩家加入本房间：</div>
+                            <div class="flex flex-wrap gap-1.5">
+                                ${otherOnline.map(op => `<button data-room-inv-id="${op.playerId}" data-room-inv-name="${op.playerName}" class="btn-room-inv-online px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-[11px] font-bold">+ 邀 ${op.playerName}</button>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- 1. 职业选择（自动升至 Lv.10 + 10 本自选书） -->
+                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs ${me.ready ? 'opacity-60 pointer-events-none' : ''}">
+                        <div class="font-black text-amber-400">1. 选择出战职业（自动 Lv.10 + 10 本自选书）</div>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${unlockedList.map(c => `
+                                <button data-pvp-cls="${c.id}" class="btn-pvp-pick-cls px-2.5 py-1 rounded-lg text-[11px] font-black border transition ${
+                                    me.classId === c.id ? 'bg-amber-500 text-slate-950 border-amber-400' : 'bg-slate-900 text-slate-300 border-slate-700'
+                                }">${c.name}</button>
+                            `).join('')}
+                        </div>
+                        <div class="grid grid-cols-4 gap-1 text-[10px] text-slate-300 bg-slate-900 p-2 rounded-lg">
+                            <span>血:<b>${me.maxHp}</b></span><span>蓝:<b>${me.maxMp}</b></span>
+                            <span>攻:<b>${me.atk}</b></span><span>防:<b>${me.def}</b></span>
+                            <span>速:<b>${me.spd}</b></span><span>精:<b>${me.spi}</b></span>
+                            <span>命:<b>${me.hit}</b></span><span>闪:<b>${me.eva}</b></span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Lv.10 五维自由加点 -->
+                    <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs ${me.ready ? 'opacity-60 pointer-events-none' : ''}">
+                        <div class="flex items-center justify-between">
+                            <span class="font-black text-emerald-400">2. Lv.10 五维加点（剩 ${me.freePoints} 点）</span>
+                            <button id="btn-pvp-reset-pts" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">🔄 重置</button>
+                        </div>
+                        <div class="space-y-1.5">
+                            ${[
+                                { k: 'str', n: '力量', v: me.str },
+                                { k: 'vit', n: '体质', v: me.vit },
+                                { k: 'agi', n: '敏捷', v: me.agi },
+                                { k: 'int', n: '智力', v: me.int },
+                                { k: 'wis', n: '智慧', v: me.wis }
+                            ].map(it => `
+                                <div class="flex items-center justify-between bg-slate-900 px-2.5 py-1.5 rounded-lg">
+                                    <span class="font-bold text-slate-200">${it.n}：${it.v}</span>
+                                    <div class="flex items-center space-x-1">
+                                        <button data-pk="${it.k}" data-pa="1" class="btn-pvp-add-stat px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[10px]">+1</button>
+                                        <button data-pk="${it.k}" data-pa="10" class="btn-pvp-add-stat px-2 py-0.5 rounded bg-amber-500/25 text-amber-300 border border-amber-500/40 font-black text-[10px]">+10</button>
+                                        <button data-pk="${it.k}" data-pa="all" class="btn-pvp-add-stat px-2 py-0.5 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 font-black text-[10px]">全加</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- 3. 10 本自选技能书 -->
+                    <div class="p-3 rounded-xl bg-slate-950 border border-sky-500/40 space-y-2 text-xs ${me.ready ? 'opacity-60 pointer-events-none' : ''}">
+                        <div class="flex items-center justify-between">
+                            <span class="font-black text-sky-400">3. 自选技能书（剩余 ${me.selectBooksLeft} / 10 本）</span>
+                            <span class="text-[10px] text-slate-400">已学 ${(me.learnedSkills || []).length} 个</span>
+                        </div>
+                        ${me.selectBooksLeft > 0 ? `
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button id="btn-pvp-bm-learn" class="py-1.5 rounded-lg font-black text-[11px] ${pvpState.prepBookMode === 'learn' ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-amber-300 border border-amber-500/40'}">📖 学新技能(${unlearned.length})</button>
+                                <button id="btn-pvp-bm-upg" class="py-1.5 rounded-lg font-black text-[11px] ${pvpState.prepBookMode === 'upgrade' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-emerald-300 border border-emerald-500/40'}">⬆️ 升已学技能(${upgradable.length})</button>
+                            </div>
+                            ${pvpState.prepBookMode === 'learn' ? `
+                                <div class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto scroll-container pt-1">
+                                    ${unlearned.map(sk => `<button data-pvp-learn="${sk.id}" class="btn-pvp-learn-sk p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-left text-[11px] font-bold text-amber-300">【${sk.name}】</button>`).join('')}
+                                </div>
+                            ` : ''}
+                            ${pvpState.prepBookMode === 'upgrade' ? `
+                                <div class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto scroll-container pt-1">
+                                    ${upgradable.map(sk => `<button data-pvp-upg="${sk.id}" class="btn-pvp-upg-sk p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-left text-[11px] font-bold text-emerald-300">【${sk.name}】Lv.${sk.level}→${sk.level + 1}</button>`).join('')}
+                                </div>
+                            ` : ''}
+                        ` : '<div class="text-[11px] text-emerald-400">✅ 10 本自选技能书已全部使用完毕！</div>'}
+                    </div>
+
+                    <!-- 底部准备大按钮 -->
+                    <button id="btn-pvp-toggle-ready" class="w-full py-3.5 rounded-2xl font-black text-sm shadow-lg transition ${
+                        me.ready
+                            ? 'bg-slate-800 text-amber-400 border border-amber-500/50'
+                            : 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950'
+                    }">
+                        ${me.ready ? '⏳ 已准备（等待其他人全部准备...点击可取消）' : '✅ 配置完毕，点击准备！'}
+                    </button>
+                `;
+
+                const syncMeToRoom = async (updatedMe) => {
+                    await setDoc(doc(db, 'pvp_rooms', room.roomId), {
+                        players: { [myId]: updatedMe },
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                };
+
+                const leaveBtn = document.getElementById('btn-pvp-leave-room');
+                if (leaveBtn) leaveBtn.onclick = async () => {
+                    playClickSfx();
+                    const copy = { ...playersObj };
+                    delete copy[myId];
+                    try {
+                        if (Object.keys(copy).length === 0) await deleteDoc(doc(db, 'pvp_rooms', room.roomId));
+                        else await setDoc(doc(db, 'pvp_rooms', room.roomId), { ...room, players: copy, hostId: Object.keys(copy)[0], updatedAt: Date.now() }, { merge: false });
+                    } catch (e) {}
+                    leavePvpRoomLocal();
+                    renderPvpModal();
+                };
+
+                const switchBtn = document.getElementById('btn-pvp-switch-team');
+                if (switchBtn) switchBtn.onclick = () => {
+                    playClickSfx();
+                    const nextTeam = me.team === 'A' ? 'B' : 'A';
+                    const targetArr = nextTeam === 'A' ? teamA : teamB;
+                    if (targetArr.length >= maxPerTeam) return showToast(`${nextTeam} 队人数已满！`);
+                    syncMeToRoom({ ...me, team: nextTeam });
+                };
+
+                body.querySelectorAll('.btn-room-inv-online').forEach(btn => {
+                    btn.onclick = () => {
+                        playClickSfx();
+                        sendPvpInvite(btn.getAttribute('data-room-inv-id'), btn.getAttribute('data-room-inv-name'), room.roomId, room.mode);
+                    };
+                });
+
+                body.querySelectorAll('.btn-pvp-pick-cls').forEach(btn => {
+                    btn.onclick = () => {
+                        playClickSfx();
+                        const cid = btn.getAttribute('data-pvp-cls');
+                        const fresh = buildPvpPlayerData(cid, me.team);
+                        pvpState.prepBookMode = null;
+                        syncMeToRoom(fresh);
+                    };
+                });
+
+                const resetBtn = document.getElementById('btn-pvp-reset-pts');
+                if (resetBtn) resetBtn.onclick = () => {
+                    playClickSfx();
+                    const fresh = buildPvpPlayerData(me.classId, me.team);
+                    fresh.selectBooksLeft = me.selectBooksLeft;
+                    fresh.learnedSkills = me.learnedSkills;
+                    syncMeToRoom(fresh);
+                };
+
+                body.querySelectorAll('.btn-pvp-add-stat').forEach(btn => {
+                    btn.onclick = () => {
+                        if (me.freePoints <= 0) return;
+                        playClickSfx();
+                        const k = btn.getAttribute('data-pk');
+                        const a = btn.getAttribute('data-pa');
+                        const add = a === 'all' ? me.freePoints : Math.min(me.freePoints, parseInt(a, 10) || 1);
+                        const copy = { ...me, [k]: me[k] + add, freePoints: me.freePoints - add };
+                        recalcPvpPlayerDerived(copy);
+                        syncMeToRoom(copy);
+                    };
+                });
+
+                const bmLearn = document.getElementById('btn-pvp-bm-learn');
+                if (bmLearn) bmLearn.onclick = () => { playClickSfx(); pvpState.prepBookMode = pvpState.prepBookMode === 'learn' ? null : 'learn'; renderPvpModal(); };
+                const bmUpg = document.getElementById('btn-pvp-bm-upg');
+                if (bmUpg) bmUpg.onclick = () => { playClickSfx(); pvpState.prepBookMode = pvpState.prepBookMode === 'upgrade' ? null : 'upgrade'; renderPvpModal(); };
+
+                body.querySelectorAll('.btn-pvp-learn-sk').forEach(btn => {
+                    btn.onclick = () => {
+                        if (me.selectBooksLeft <= 0) return;
+                        playClickSfx();
+                        const skId = btn.getAttribute('data-pvp-learn');
+                        const sk = ALL_SKILLS[skId];
+                        if (!sk) return;
+                        const copy = JSON.parse(JSON.stringify(me));
+                        copy.learnedSkills.push({ id: sk.id, name: sk.name, level: me.classId === 'wanfa_tianzun' ? 6 : 1, maxCap: cls.isHighTier ? 15 : (sk.isAdvSkill ? 6 : 3), desc: sk.desc, isExclusive: !sk.isPublic });
+                        copy.selectBooksLeft -= 1;
+                        syncMeToRoom(copy);
+                    };
+                });
+
+                body.querySelectorAll('.btn-pvp-upg-sk').forEach(btn => {
+                    btn.onclick = () => {
+                        if (me.selectBooksLeft <= 0) return;
+                        playClickSfx();
+                        const skId = btn.getAttribute('data-pvp-upg');
+                        const copy = JSON.parse(JSON.stringify(me));
+                        const targetSk = copy.learnedSkills.find(s => s.id === skId);
+                        if (!targetSk) return;
+                        targetSk.level += 1;
+                        copy.selectBooksLeft -= 1;
+                        syncMeToRoom(copy);
+                    };
+                });
+
+                document.getElementById('btn-pvp-toggle-ready').onclick = () => {
+                    playClickSfx();
+                    syncMeToRoom({ ...me, ready: !me.ready });
+                };
+            }
+
+            // 11. 渲染实时 PvP 战斗画面
+            function renderPvpBattleView(body, room) {
+                const myId = getPvpMyId();
+                const playersObj = room.players || {};
+                const me = playersObj[myId];
+                if (!me) return;
+
+                const enemies = Object.values(playersObj).filter(x => x.team !== me.team);
+                const allies = Object.values(playersObj).filter(x => x.team === me.team);
+                const aliveEnemies = enemies.filter(x => x.hp > 0);
+                if (aliveEnemies.length > 0 && !aliveEnemies.some(e => e.id === pvpState.selectedTargetId)) {
+                    pvpState.selectedTargetId = aliveEnemies[0].id;
+                }
+
+                const isMyTurn = room.phase === 'battle' && room.turnPlayerId === myId && me.hp > 0;
+                const turnActor = playersObj[room.turnPlayerId];
+                const activeSkills = (me.learnedSkills || []).filter(s => !(ALL_SKILLS[s.id] && ALL_SKILLS[s.id].isPassive));
+
+                const renderFighterCard = (f, isEnemy) => {
+                    const hpPct = Math.max(0, Math.min(100, Math.round((f.hp / f.maxHp) * 100)));
+                    const isTarget = isEnemy && f.id === pvpState.selectedTargetId && f.hp > 0;
+                    const isActing = room.turnPlayerId === f.id && room.phase === 'battle';
+                    return `
+                        <div data-pvp-target="${f.id}" class="${isEnemy ? 'pvp-enemy-card cursor-pointer' : ''} p-2.5 rounded-xl border transition ${
+                            f.hp <= 0 ? 'bg-slate-950/50 border-slate-800 opacity-45'
+                                : (isActing ? 'border-amber-400 bg-amber-950/30 shadow-md'
+                                    : (isTarget ? 'border-rose-500 bg-slate-900' : 'border-slate-800 bg-slate-950'))
+                        }">
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="font-black ${isEnemy ? 'text-rose-300' : 'text-sky-300'} truncate">${isTarget ? '🎯 ' : ''}${f.name} [${f.className}]</span>
+                                <span class="text-[10px] ${f.hp <= 0 ? 'text-slate-500' : 'text-amber-400 font-bold'}">${f.hp <= 0 ? '💀阵亡' : (isActing ? '⚡行动中' : `速:${f.spd}`)}</span>
+                            </div>
+                            <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden mb-1">
+                                <div class="h-full ${isEnemy ? 'bg-rose-500' : 'bg-emerald-500'}" style="width:${hpPct}%"></div>
+                            </div>
+                            <div class="flex items-center justify-between text-[10px] text-slate-300">
+                                <span>HP:${f.hp}/${f.maxHp}${f.shield > 0 ? ` <b class="text-sky-300">(🛡️+${f.shield})</b>` : ''}</span>
+                                <span>${f.energyName || '蓝'}:${f.mp}/${f.maxMp}</span>
+                            </div>
+                        </div>
+                    `;
+                };
+
+                body.innerHTML = `
+                    <!-- 敌方阵营 -->
+                    <div class="space-y-1.5">
+                        <div class="text-[11px] font-bold text-rose-400">🔴 敌方阵营（点击切换目标）</div>
+                        <div class="grid ${enemies.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
+                            ${enemies.map(e => renderFighterCard(e, true)).join('')}
+                        </div>
+                    </div>
+
+                    <!-- 回合状态与实时战报 -->
+                    <div class="p-2.5 rounded-xl bg-slate-950 border ${isMyTurn ? 'border-amber-400' : 'border-slate-800'} space-y-1.5">
+                        <div class="text-xs font-black text-center ${isMyTurn ? 'text-amber-400' : 'text-slate-300'}">
+                            ${room.phase === 'finished'
+                                ? `🏆 切磋结束！【${room.winnerTeam} 队】获胜！${room.winnerTeam === me.team ? '（恭喜你赢下本局！）' : ''}`
+                                : (isMyTurn ? '⚡ 轮到你行动！请选择攻击、防御或技能' : `⏳ 等待【${turnActor ? turnActor.name : '...'}】行动中...`)}
+                        </div>
+                        <div class="max-h-28 overflow-y-auto scroll-container space-y-0.5 text-[10px] text-slate-300 border-t border-slate-800 pt-1.5">
+                            ${(room.logs || []).slice().reverse().map(l => `<div>${l}</div>`).join('')}
+                        </div>
+                    </div>
+
+                    <!-- 我方阵营 -->
+                    <div class="space-y-1.5">
+                        <div class="text-[11px] font-bold text-sky-400">🔵 我方阵营</div>
+                        <div class="grid ${allies.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
+                            ${allies.map(a => renderFighterCard(a, false)).join('')}
+                        </div>
+                    </div>
+
+                    <!-- 战斗操作面板 / 结算按钮 -->
+                    ${room.phase === 'finished' ? `
+                        <button id="btn-pvp-finish-back" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow">
+                            🏆 返回切磋大厅查看排行榜
+                        </button>
+                    ` : `
+                        <div class="space-y-2 ${!isMyTurn ? 'opacity-50 pointer-events-none' : ''}">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="btn-pvp-atk" class="py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs">🗡️ 普通攻击</button>
+                                <button id="btn-pvp-def" class="py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs">🛡️ 基础防御</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto scroll-container">
+                                ${activeSkills.map(sk => {
+                                    const c = getSkillMpCost(me, sk);
+                                    return `
+                                        <button data-pvp-cast="${sk.id}" class="btn-pvp-cast-sk p-2 rounded-xl bg-indigo-950 hover:bg-indigo-900 border border-indigo-500/50 text-left">
+                                            <div class="flex items-center justify-between text-xs font-black text-indigo-300">
+                                                <span class="truncate">✨ ${sk.name} Lv.${sk.level}</span>
+                                                <span class="text-[10px] text-sky-400">-${c}</span>
+                                            </div>
+                                        </button>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `}
+                `;
+
+                body.querySelectorAll('.pvp-enemy-card').forEach(card => {
+                    card.onclick = () => {
+                        const tid = card.getAttribute('data-pvp-target');
+                        if (playersObj[tid] && playersObj[tid].hp > 0) {
+                            pvpState.selectedTargetId = tid;
+                            renderPvpModal();
+                        }
+                    };
+                });
+
+                const backBtn = document.getElementById('btn-pvp-finish-back');
+                if (backBtn) backBtn.onclick = async () => {
+                    playClickSfx();
+                    leavePvpRoomLocal();
+                    pvpState.lobbyTab = 'rank';
+                    await fetchPvpLeaderboard();
+                    renderPvpModal();
+                };
+
+                const atkBtn = document.getElementById('btn-pvp-atk');
+                if (atkBtn) atkBtn.onclick = () => submitPvpAction('attack');
+                const defBtn = document.getElementById('btn-pvp-def');
+                if (defBtn) defBtn.onclick = () => submitPvpAction('defend');
+                body.querySelectorAll('.btn-pvp-cast-sk').forEach(btn => {
+                    btn.onclick = () => submitPvpAction('skill', btn.getAttribute('data-pvp-cast'));
+                });
+            }
+
+            // 12. 绑定入口与弹窗按钮
+            window.__openPvpModal = async (defaultTab = 'online') => {
+                pvpState.lobbyTab = defaultTab;
+                document.getElementById('pvp-modal').classList.remove('hidden');
+                if (pvpState.view === 'lobby') {
+                    if (defaultTab === 'online') await fetchOnlinePlayers();
+                    else await fetchPvpLeaderboard();
+                }
+                renderPvpModal();
+            };
+
+            document.getElementById('btn-close-pvp-modal').onclick = () => {
+                playClickSfx();
+                document.getElementById('pvp-modal').classList.add('hidden');
+            };
+            document.getElementById('tab-pvp-online').onclick = async () => {
+                playClickSfx();
+                pvpState.lobbyTab = 'online';
+                await fetchOnlinePlayers();
+                renderPvpModal();
+            };
+            document.getElementById('tab-pvp-rank').onclick = async () => {
+                playClickSfx();
+                pvpState.lobbyTab = 'rank';
+                await fetchPvpLeaderboard();
+                renderPvpModal();
+            };
+
         } catch (e) {
             console.warn("Firebase 初始化异常:", e);
         }
