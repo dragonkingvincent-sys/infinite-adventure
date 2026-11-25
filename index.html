@@ -5426,21 +5426,6 @@
                     eva: 5 * finalLv,
                     speedAcc: 0,
                     actionsLeft: 0,
-                    skipNextTurn: false,
-                    chainLinked: false,
-                    holyHealTurns: 0,
-                    holyHealVal: 0,
-                    rapidReloadCharges: 0,
-                    swordHeartUsedThisRound: false,
-                    swordMarkStacks: 0,
-                    empowerStacks: 0,
-                    meditationSpiPct: 0,
-                    shadowFlurrySpiPct: 0,
-                    thornsStance: false,
-                    bloodthirstTurns: 0,
-                    bloodthirstPct: 0,
-                    heavyWoundTurns: 0
-                    actionsLeft: 0,
                     defStance: false,
                     reviveTimer: 0
                 };
@@ -6548,6 +6533,12 @@
                     addBattleLog(battle, `🩸 【${m.name}】受到【流血(${m.bleedStacks}层)】无视防御伤害 -${bDmg}！`);
                     checkMonsterDeathOrPhase(battle, m);
                 }
+                if (m.traumaStacks > 0 && m.traumaDmg > 0) {
+                    const tDmg = Math.max(1, Math.round(m.traumaDmg * m.traumaStacks));
+                    inflictDirectDamageToMonster(battle, m, tDmg);
+                    addBattleLog(battle, `🧠 【${m.name}】受到【精神创伤(${m.traumaStacks}层)】无视防御伤害 -${tDmg}！`);
+                    checkMonsterDeathOrPhase(battle, m);
+                }
                 if (m.miasmaStacks > 0 && m.miasmaDmg > 0) {
                     const mDmg = Math.max(1, Math.round(m.miasmaDmg * m.miasmaStacks));
                     inflictDirectDamageToMonster(battle, m, mDmg);
@@ -6557,6 +6548,10 @@
                 }
                 if (m.heavyWoundTurns > 0) {
                     m.heavyWoundTurns -= 1;
+                    if (m.heavyWoundTurns === 0 && m.heavyWoundLostMaxHp > 0) {
+                        m.maxHp += m.heavyWoundLostMaxHp;
+                        m.heavyWoundLostMaxHp = 0;
+                    }
                 }
             });
 
@@ -6673,6 +6668,7 @@
             if (target.id === 'wolf_god') {
                 rem = Math.max(1, Math.round(rem * 0.70));
             }
+            const effectiveLoss = rem;
             if (target.shield && target.shield > 0) {
                 const abs = Math.min(target.shield, rem);
                 target.shield -= abs;
@@ -6697,7 +6693,7 @@
                 state.run.challengeStageDamage = (state.run.challengeStageDamage || 0) + actualHpLost;
                 state.run.challengeTotalDamage = (state.run.challengeTotalDamage || 0) + actualHpLost;
             }
-            return dmg;
+            return effectiveLoss;
         }
 
         function inflictDirectDamageToMonster(battle, target, dmg) {
@@ -6883,9 +6879,7 @@
 
 
             if (dmg > 0) {
-
-                inflictDirectDamageToMonster(battle, target, dmg);
-
+                dmg = inflictDirectDamageToMonster(battle, target, dmg);
                 battle.roundAttackCount += 1;
 
                 if (hasPlayerClassPassive(p, 'swordsman')) {
@@ -7000,9 +6994,7 @@
 
                     ? { isDodged: false, dmgMult: 1.0, tag: '' }
 
-                    : resolveHitAndEvade(sumUnit.hit || 10, target.eva, 0);
-
-
+                    : resolveHitAndEvade(Math.round((sumUnit.hit || 10) * empMult), target.eva, 0);
                 if (hitRes.isDodged) {
 
                     addBattleLog(battle, `💨 伙伴【${sumUnit.name}】攻击【${target.name}】，但被对方闪避了！`);
@@ -7041,7 +7033,11 @@
 
 
             if (battle.playerActionsLeft <= 0) return;
-
+            const pCheck = run.player;
+            if (pCheck.classId === 'ballista' && !(battle.rapidReloadCharges > 0) && battle.playerActionsLeft < 2) {
+                showToast('弩炮手被动【装弹】：普通攻击需要消耗 2 次行动（当前剩余 1 次，可防御或使用【快速装填】）！');
+                return;
+            }
             if (battle.isTutorialFloor2 && battle.round === 2) {
 
                 showToast('新手教学引导：第 2 回合狼准备发起攻击，请点击【🛡️ 基础防御】使下回合受到攻击时防御+100%！');
@@ -7176,7 +7172,17 @@
                 showToast('【剑心】主动效果每回合限用 1 次！');
                 return;
             }
-
+            if (sk.id === 'charged_shot') {
+                const needAct = Math.max(1, 3 - Math.floor(sk.level / 3));
+                if (battle.playerActionsLeft < needAct) {
+                    showToast(`【蓄力一击 Lv.${sk.level}】需要消耗 ${needAct} 次行动（当前仅剩 ${battle.playerActionsLeft} 次）！`);
+                    return;
+                }
+            }
+            if (sk.id === 'boundless_sword_qi' && battle.playerActionsLeft < 3) {
+                showToast(`【无边剑气】需要消耗 3 次行动（当前仅剩 ${battle.playerActionsLeft} 次）！`);
+                return;
+            }
             const cost = getSkillMpCost(p, sk);
             if (p.mp < cost) {
                 const dispName = getFormattedSkillName(p, sk.id, sk.name);
@@ -7261,7 +7267,9 @@
                 } else {
                     const dmg = dealPlayerDamageToMonster(battle, target, d.atk * 1.5, false, 1.0);
                     if (!isDummy && target.heavyWoundTurns === 0) {
-                        target.maxHp = Math.max(1, Math.round(target.maxHp * (1 - woundPct)));
+                        const newMax = Math.max(1, Math.round(target.maxHp * (1 - woundPct)));
+                        target.heavyWoundLostMaxHp = (target.heavyWoundLostMaxHp || 0) + Math.max(0, target.maxHp - newMax);
+                        target.maxHp = newMax;
                         target.hp = Math.min(target.hp, target.maxHp);
                     }
                     target.heavyWoundTurns = 3;
@@ -7490,20 +7498,14 @@
 
                 const hpCost = Math.max(1, Math.round(d.maxHp * 0.05));
 
-                if (battle.playerShield >= hpCost) {
-
-                    battle.playerShield -= hpCost;
-
-                } else {
-
-                    const remCost = hpCost - (battle.playerShield || 0);
-
-                    battle.playerShield = 0;
-
-                    p.hp = Math.max(1, p.hp - remCost);
-
-                }
-
+                const maxHpPay = Math.max(0, p.hp - 1);
+                if (maxHpPay >= hpCost) {
+                    p.hp -= hpCost;
+                } else {
+                    const shieldPay = hpCost - maxHpPay;
+                    p.hp = 1;
+                    battle.playerShield = Math.max(0, (battle.playerShield || 0) - shieldPay);
+                }
                 const mult = 3.0 + (sk.level - 1) * 1.0;
 
                 getAliveMonsters(battle).forEach(m => {
@@ -7522,34 +7524,21 @@
 
                 const hpCost = Math.max(1, Math.round(d.maxHp * 0.10));
 
-                if (battle.playerShield >= hpCost) {
-
-                    battle.playerShield -= hpCost;
-
-                } else {
-
-                    const remCost = hpCost - (battle.playerShield || 0);
-
-                    battle.playerShield = 0;
-
-                    p.hp = Math.max(1, p.hp - remCost);
-
-                }
-
+                const maxHpPay = Math.max(0, p.hp - 1);
+                if (maxHpPay >= hpCost) {
+                    p.hp -= hpCost;
+                } else {
+                    const shieldPay = hpCost - maxHpPay;
+                    p.hp = 1;
+                    battle.playerShield = Math.max(0, (battle.playerShield || 0) - shieldPay);
+                }
                 const hits = 5 + (sk.level - 1);
-
                 const mult = 1.0 + (sk.level - 1) * 0.10;
-
                 let totalDmg = 0;
-
                 for (let i = 0; i < hits; i++) {
-
                     const aliveList = getAliveMonsters(battle);
-
                     if (aliveList.length === 0) break;
-
                     const randM = aliveList[Math.floor(Math.random() * aliveList.length)];
-
                     const dmg = dealPlayerDamageToMonster(battle, randM, d.atk * mult, false, 1.0);
 
                     totalDmg += dmg;
@@ -7739,22 +7728,14 @@
 
                 });
 
-            } else if (sk.id === 'mind_trauma') {
-
-                const t = target || getAliveMonsters(battle)[0];
-
-                if (t) {
-
-                    const maxTr = isDebuffCapRemoved(battle) ? 9999 : (5 + (sk.level - 1) * 2);
-
-                    t.bleedStacks = Math.min(maxTr, (t.bleedStacks || 0) + 1 + bonusLayers);
-
-                    t.bleedDmg = Math.max(1, d.spi - t.spi);
-
-                    addBattleLog(battle, `🧠 【精神创伤 Lv.${sk.level}】对【${t.name}】叠加至 ${t.bleedStacks}/${maxTr} 层（每层每回造成 ${t.bleedDmg} 点无视防御伤害）！`);
-
-                }
-
+            } else if (sk.id === 'mind_trauma') {
+                const t = target || getAliveMonsters(battle)[0];
+                if (t) {
+                    const maxTr = isDebuffCapRemoved(battle) ? 9999 : (5 + (sk.level - 1) * 2);
+                    t.traumaStacks = Math.min(maxTr, (t.traumaStacks || 0) + 1 + bonusLayers);
+                    t.traumaDmg = Math.max(1, d.spi - t.spi);
+                    addBattleLog(battle, `🧠 【精神创伤 Lv.${sk.level}】对【${t.name}】叠加至 ${t.traumaStacks}/${maxTr} 层（每层每回造成 ${t.traumaDmg} 点无视防御伤害）！`);
+                }
             } else if (sk.id === 'shadow_flurry') {
 
                 // 【影子狂击】已调整为：造成 (25% + 5%*(Lv-1)) 攻击伤害 (10 + 2*(Lv-1)) 次
@@ -7795,14 +7776,10 @@
 
                 }
 
-            } else if (sk.id === 'shadow_blessing') {
-
-                const charges = 5 + (sk.level - 1);
-
-                battle.skillfulForceCharges = (battle.skillfulForceCharges || 0) + charges;
-
-                addBattleLog(battle, `🌑 【影子庇佑 Lv.${sk.level}】生效：可无视敌方接下来 ${battle.skillfulForceCharges} 次攻击！`);
-
+            } else if (sk.id === 'shadow_blessing') {
+                const charges = 5 + (sk.level - 1);
+                battle.allHitBlockCharges = (battle.allHitBlockCharges || 0) + charges;
+                addBattleLog(battle, `🌑 【影子庇佑 Lv.${sk.level}】生效：可无视敌方接下来 ${battle.allHitBlockCharges} 次任意攻击（含普攻与技能）！`);
             } else if (sk.id === 'shadow_erase') {
 
                 const t = target || getAliveMonsters(battle)[0];
@@ -7820,9 +7797,7 @@
                 const layers = 5 + (sk.level - 1) * 2;
 
                 const shPct = 0.10 + (sk.level - 1) * 0.05;
-
-                battle.skillfulForceCharges = (battle.skillfulForceCharges || 0) + layers;
-
+                battle.allHitBlockCharges = (battle.allHitBlockCharges || 0) + layers;
                 const shBonus = Math.round(d.maxMp * shPct * layers);
 
                 battle.playerShield = (battle.playerShield || 0) + shBonus;
@@ -8151,7 +8126,12 @@
         function applyIncomingDamageToPlayer(battle, dmg, attackerMonster) {
             const p = state.run.player;
             const guardianSk = p.learnedSkills.find(s => s.id === 'guardian_passive');
-
+            // 影刺【影子庇佑】/ 剑道宗师【人剑合一】：无视敌方普攻与技能伤害
+            if (attackerMonster && dmg > 0 && battle.allHitBlockCharges > 0) {
+                battle.allHitBlockCharges -= 1;
+                addBattleLog(battle, `🌑 【庇佑/人剑合一】生效！完全无视了【${attackerMonster.name}】的本次攻击（剩余 ${battle.allHitBlockCharges} 次）！`);
+                return 0;
+            }
             if (attackerMonster && attackerMonster.hp > 0 && !battle._inCounterAttack) {
                 battle._inCounterAttack = true;
                 try {
@@ -8200,12 +8180,17 @@
             const isAoeBoss = attackerMonster && (attackerMonster.id === 'skeleton_king' || attackerMonster.id === 'bandit_chief' || attackerMonster.id === 'visiting_demon_king' || (attackerMonster.id === 'bone_emperor' ));
             const paladin = getActivePaladin(battle);
             if (paladin && paladin.hp > 0 && !isAoeBoss) {
-                const actualPalDmg = paladin.defStance ? Math.max(1, Math.round(rem * 0.5)) : rem;
+                const empMult = 1 + (battle.empowerTurns > 0 ? (battle.empowerPct || 0) / 100 : 0);
+                const dNow = getCombatPlayerStats(battle);
+                const playerEffDef = getEffectivePlayerDef(battle, dNow.def);
+                const palDef = Math.round((paladin.def || 0) * empMult);
+                const defDiff = Math.max(0, palDef - playerEffDef);
+                const reduced = Math.max(0, rem - defDiff);
+                const actualPalDmg = paladin.defStance ? Math.round(reduced * 0.5) : reduced;
                 paladin.hp = Math.max(0, paladin.hp - actualPalDmg);
-                addBattleLog(battle, `🛡️ 【圣骑士】替你承受了 ${actualPalDmg} 点伤害（剩余生命 ${paladin.hp}/${paladin.maxHp}）！`);
+                addBattleLog(battle, `🛡️ 【圣骑士】(防御${palDef})替你承受了 ${actualPalDmg} 点伤害（剩余生命 ${paladin.hp}/${paladin.maxHp}）！`);
                 return actualPalDmg;
             }
-
             const aliveWolves = getAliveSummons(battle).filter(s => s.type === 'wolf_pack' || s.type === 'werewolf');
             if (!guardianSk && aliveWolves.length > 0 && battle.tauntDefTurns <= 0 && attackerMonster && !isAoeBoss) {
                 const totalTargets = 1 + aliveWolves.length;
@@ -9793,6 +9778,7 @@
                             const segDmg = calcDamageWithDefense(m.atk * punchMult, effDef, false, finalHitMult);
                             segDmgs.push(segDmg);
                         }
+                        
                         await playMonsterComboVisual(m, 3, 'fist_smash', segDmgs, '👊 妖王三拳 ×3!');
                         if (!state.run || state.run.phase !== 'battle' || !state.run.battle) return;
                         for (const segDmg of segDmgs) {
@@ -9865,7 +9851,11 @@
                         }
                         await playMonsterComboVisual(m, 10, 'blade_combo', segDmgs, '⚔️ 连击 ×10连斩!');
                         if (!state.run || state.run.phase !== 'battle' || !state.run.battle) return;
-                        applyIncomingDamageToPlayer(battle, totalHitDmg, m);
+                        for (const segDmg of segDmgs) {
+                            if (p.hp <= 0) break;
+                            applyIncomingDamageToPlayer(battle, segDmg, m);
+                        }
+                        
                         recalcMonstersDynamicStats(battle);
                         addBattleLog(battle, `⚔️ 【${m.name}】释放【连击(10段)】，连续劈砍 10 次共造成 ${totalHitDmg} 点伤害！`);
                     } else if (m.id === 'rookie_doom') {
@@ -9882,7 +9872,10 @@
                         }
                         await playMonsterComboVisual(m, 2, 'heavy_slash', segDmgs, '⚔️ 双击 ×2!');
                         if (!state.run || state.run.phase !== 'battle' || !state.run.battle) return;
-                        applyIncomingDamageToPlayer(battle, totalDoubleDmg, m);
+                        for (const segDmg of segDmgs) {
+                            if (p.hp <= 0) break;
+                            applyIncomingDamageToPlayer(battle, segDmg, m);
+                        }
                         recalcMonstersDynamicStats(battle);
                         addBattleLog(battle, `⚔️ 【${m.name}】触发被动【双击】连续攻击 2 次，共造成 ${totalDoubleDmg} 点伤害！`);
                     } else if ((m.id === 'lone_wolf' || m.id === 'werewolf_elite') && m.intentType === 'debuff') {
@@ -12643,6 +12636,7 @@
                 if (b.empowerTurns > 0) buffContainer.innerHTML += `<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/50">⬆️强化×${b.empowerStacks || 1}(+${b.empowerPct}%)</span>`;
                 if (b.stealthTurns > 0) buffContainer.innerHTML += `<span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/50">🌑隐身(${b.stealthTurns}回)</span>`;
                 if (b.skillfulForceCharges > 0) buffContainer.innerHTML += `<span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/50">🌀免伤×${b.skillfulForceCharges}次</span>`;
+                if (b.allHitBlockCharges > 0) buffContainer.innerHTML += `<span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-400/60">🌑全免伤×${b.allHitBlockCharges}次</span>`;
                 if (b.swordMarkStacks > 0) buffContainer.innerHTML += `<span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-500/50">🗡️剑印×${b.swordMarkStacks}</span>`;
                 if (b.khorneRageActive) buffContainer.innerHTML += `<span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-500/50">😡恐虐Lv.${b.khorneRageLv}</span>`;
                 if (b.bloodAuraStacks > 0) buffContainer.innerHTML += `<span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-500/50">🩸血环×${b.bloodAuraStacks}</span>`;
@@ -13430,6 +13424,7 @@
             if (m.erosionStacks > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-500/50">🟣侵蚀×${m.erosionStacks}(${m.erosionTurns}回)</span>`);
             if (m.poisonStacks > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/50">🐸剧毒×${m.poisonStacks}</span>`);
             if (m.bleedStacks > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-rose-950 text-rose-300 border border-rose-500/50">🩸流血×${m.bleedStacks}</span>`);
+            if (m.traumaStacks > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-500/50">🧠创伤×${m.traumaStacks}</span>`);
             if (m.miasmaStacks > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/50">🌊蔓延×${m.miasmaStacks}</span>`);
             if (m.heavyWoundTurns > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-rose-950 text-rose-300 border border-rose-500/50">🔨重伤(${m.heavyWoundTurns}回)</span>`);
             if (m.silencedActions > 0) tags.push(`<span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-rose-300 border border-rose-500/50">🤐沉默(${m.silencedActions}次)</span>`);
@@ -16453,7 +16448,22 @@
                     poisonStacks: 0,
                     erosionStacks: 0,
                     erosionTurns: 0,
-                    speedAcc: 0
+                    speedAcc: 0,
+                    actionsLeft: 0,
+                    skipNextTurn: false,
+                    chainLinked: false,
+                    holyHealTurns: 0,
+                    holyHealVal: 0,
+                    rapidReloadCharges: 0,
+                    swordHeartUsedThisRound: false,
+                    swordMarkStacks: 0,
+                    empowerStacks: 0,
+                    meditationSpiPct: 0,
+                    shadowFlurrySpiPct: 0,
+                    thornsStance: false,
+                    bloodthirstTurns: 0,
+                    bloodthirstPct: 0,
+                    heavyWoundTurns: 0
                 };
             }
 
@@ -17179,7 +17189,7 @@
                     } else if (sk.id === 'sword_heart') {
                         const addActs = 3 + (sk.level - 1);
                         me.swordHeartUsedThisRound = true;
-                        me.actionsLeft = (me.actionsLeft || 1) + addActs;
+                        me.actionsLeft = (me.actionsLeft || 1) + addActs + 1;
                         vfxPayload.isSelfOrAlly = true;
                         vfxPayload.targetIds = [me.id];
                         vfxPayload.label = `🗡️行动+${addActs}`;
@@ -17322,7 +17332,27 @@
                         });
                         vfxPayload.skillId = 'all_methods';
                         vfxPayload.label = '🌌万法齐鸣';
-                    } else if (['mana_bomb', 'cleave_sweep', 'mind_blast', 'micro_control', 'summon_fire_spirit', 'ghost_miasma'].includes(sk.id)) {
+                 } else if (sk.id === 'micro_control') {
+                     const spentQi = Math.max(1, Math.round(me.maxMp * 0.10));
+                     const rawDmg = spentQi * 2 * sk.level;
+                     let sumD = 0;
+                     let killedAny = false;
+                     curEnemies.forEach(en => {
+                         const seg = dealPvpDmg(en, rawDmg, false);
+                         sumD += seg;
+                         if (en.hp <= 0) killedAny = true;
+                     });
+                     if (killedAny) {
+                         const rec = Math.round(me.maxMp * 0.20);
+                         const over = (me.mp + rec) - me.maxMp;
+                         me.mp = Math.min(me.maxMp, me.mp + rec);
+                         if (over > 0) me.shield = (me.shield || 0) + over;
+                     }
+                     vfxPayload.targetIds = curEnemies.map(e => e.id);
+                     vfxPayload.tookDmg = sumD > 0;
+                     vfxPayload.label = `☯️-${sumD}`;
+                     addLog(`☯️ 【${me.name}】释放【操控入微 Lv.${sk.level}】，对敌方全体共造成 ${sumD} 点伤害${killedAny ? '（触发斩杀回气！）' : ''}！`);
+                    } else if (['mana_bomb', 'cleave_sweep', 'mind_blast', 'summon_fire_spirit', 'ghost_miasma'].includes(sk.id)) {
                         const baseStat = (sk.id === 'cleave_sweep') ? myEff.atk : (sk.id === 'ghost_miasma' ? Math.round(me.maxMp * (0.02 + (sk.level - 1) * 0.01)) : Math.max(myEff.spi, myEff.atk));
                         const mult = sk.id === 'ghost_miasma' ? 1.0 : (sk.id === 'cleave_sweep' ? (3.0 + (sk.level - 1)) : (1.6 + (sk.level - 1) * 0.5));
                         let sumD = 0;
@@ -17436,9 +17466,13 @@
                             if (curTarget.hp <= 0) break;
                             dmg += dealPvpDmg(curTarget, singleRaw, ignoreD);
                         }
-                        if (sk.id === 'raging_strike' || sk.id === 'wild_chop') {
-                            applyPvpLifesteal(dmg, sk.id === 'raging_strike' ? 50 : 30);
-                        }
+                     if (sk.id === 'raging_strike') {
+                         applyPvpLifesteal(dmg, 50);
+                         me.bloodthirstTurns = Math.max(me.bloodthirstTurns || 0, 3 + (sk.level - 1));
+                         me.bloodthirstPct = Math.max(me.bloodthirstPct || 0, 30 + (sk.level - 1) * 10);
+                     } else if (sk.id === 'wild_chop') {
+                         applyPvpLifesteal(dmg, me.bloodthirstPct || 30);
+                     }
                         vfxPayload.hitCount = hits;
                         vfxPayload.tookDmg = dmg > 0;
                         vfxPayload.label = dmg > 0 ? `-${dmg}` : '🛡️0';
@@ -17447,6 +17481,9 @@
                 };
 
                 if (actionType === 'attack') {
+               if (me.classId === 'ballista' && !(me.rapidReloadCharges > 0) && (me.actionsLeft || 0) < 2) {
+                   return showToast('弩炮手【装弹】：普攻需要消耗 2 次行动（当前仅剩 1 次）！');
+               }
                     const hits = hasPlayerClassPassive(me, 'archer') ? 2 : 1;
                     let total = 0;
                     for (let i = 0; i < hits; i++) {
@@ -17487,6 +17524,13 @@
                     if (sk.id === 'sword_heart' && me.swordHeartUsedThisRound) {
                         return showToast('【剑心】主动效果每回合限用 1 次！');
                     }
+               if (sk.id === 'charged_shot') {
+                   const needAct = Math.max(1, 3 - Math.floor(sk.level / 3));
+                   if ((me.actionsLeft || 0) < needAct) return showToast(`【蓄力一击】需要 ${needAct} 次行动！`);
+               }
+               if (sk.id === 'boundless_sword_qi' && (me.actionsLeft || 0) < 3) {
+                   return showToast('【无边剑气】需要 3 次行动！');
+               }
                     const cost = getSkillMpCost(me, sk);
                     if (me.mp < cost) return showToast(`${me.energyName || '精力'}不足（需 ${cost} 点）！`);
                     me.mp = Math.max(0, me.mp - cost);
