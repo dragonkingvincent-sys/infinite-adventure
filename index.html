@@ -14539,8 +14539,10 @@
                     <span class="text-xs font-bold text-slate-300 block">已学技能与职业被动</span>
                     <div class="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-300 space-y-1">
                         <div><b class="text-emerald-400">职业被动：</b>${cls.passiveText}</div>
+                        ${cls.isAdvanced && cls.baseClassId ? `<div class="text-sky-300"><b class="text-sky-400">继承初阶被动（${getClassConfig(cls.baseClassId).name}）：</b>${getClassConfig(cls.baseClassId).passiveText}</div>` : ''}
                     </div>
                     ${skillsHtml}
+
                 </div>
 
                 <div class="space-y-1.5">
@@ -16631,7 +16633,62 @@
                     }
 
                     renderPvpModal();
+
+                    // 双端同步播放最新一次攻击/技能的视觉特效与飘字
+                    if (data.lastActionVfx && data.lastActionVfx.seq && data.lastActionVfx.seq !== pvpState.lastPlayedVfxSeq) {
+                        pvpState.lastPlayedVfxSeq = data.lastActionVfx.seq;
+                        const vfx = data.lastActionVfx;
+                        setTimeout(() => playPvpSyncedVfx(vfx), 50);
+                    }
                 });
+            }
+            function playPvpSyncedVfx(vfx) {
+                if (!vfx) return;
+                const actorRect = getElementCenterRect(`pvp-fighter-${vfx.actorId}`);
+                const targetRects = (vfx.targetIds || [])
+                    .map(tid => getElementCenterRect(`pvp-fighter-${tid}`))
+                    .filter(Boolean);
+                const fallbackRect = targetRects[0] || actorRect;
+
+                if (vfx.actionType === 'attack') {
+                    const hits = Math.max(1, vfx.hitCount || 1);
+                    const sfxKey = vfx.vfxStyle === 'cannon_beam' ? 'cannon_shot'
+                        : (vfx.vfxStyle === 'arrow' ? 'arrow_shot' : (vfx.vfxStyle === 'magic_bolt' ? 'magic_bolt' : 'slash_single'));
+                    for (let i = 0; i < hits; i++) {
+                        setTimeout(() => {
+                            playSignatureSfx(sfxKey);
+                            playSingleImpactVfx(fallbackRect, vfx.vfxStyle || 'slash', i === 0 ? (vfx.label || '') : '');
+                        }, i * 130);
+                    }
+                    if (vfx.tookDmg) triggerHurtShake();
+                } else if (vfx.actionType === 'defend') {
+                    playSignatureSfx('shield_up');
+                    playSingleImpactVfx(actorRect, 'shield', '🛡️ 防御+100%');
+                } else if (vfx.actionType === 'skill' && vfx.skillId) {
+                    const useRects = vfx.isSelfOrAlly ? (targetRects.length > 0 ? targetRects : [actorRect]) : targetRects;
+                    playPlayerSkillVfxAndSfx(vfx.skillId, useRects, vfx.hitCount || 1, vfx.label || vfx.skillName || '');
+                    if (vfx.tookDmg) triggerHurtShake();
+                }
+
+                // 给受击/施法卡片加上闪烁或前冲动画
+                if (vfx.actorId) {
+                    const aEl = document.getElementById(`pvp-fighter-${vfx.actorId}`);
+                    if (aEl) {
+                        aEl.classList.remove('monster-lunge-anim');
+                        void aEl.offsetWidth;
+                        aEl.classList.add('monster-lunge-anim');
+                    }
+                }
+                if (vfx.tookDmg && Array.isArray(vfx.targetIds)) {
+                    vfx.targetIds.forEach(tid => {
+                        const tEl = document.getElementById(`pvp-fighter-${tid}`);
+                        if (tEl) {
+                            tEl.classList.remove('monster-hit-anim');
+                            void tEl.offsetWidth;
+                            tEl.classList.add('monster-hit-anim');
+                        }
+                    });
+                }
             }
 
             function leavePvpRoomLocal() {
@@ -16667,8 +16724,39 @@
                 const newLogs = [...(room.logs || [])];
                 const addLog = (txt) => newLogs.push(txt);
 
-                // 回合初结算自身持续负面（流血/侵蚀）
+                // === 1. 回合初被动结算（继承基础被动 + 进阶被动全生效） ===
                 me.defStance = false;
+                // 牧师/召唤师开局【圣骑士护佑】护盾（首回合自动触发）
+                if (hasPlayerClassPassive(me, 'priest') && !me.paladinInitDone) {
+                    me.paladinInitDone = true;
+                    const palLv = me.classId === 'summoner' ? 15 : 10;
+                    const palShield = 200 * palLv;
+                    me.shield = (me.shield || 0) + palShield;
+                    addLog(`🛡️ 【${me.name}】触发被动【圣骑士】：圣骑士护佑提供 ${palShield} 点护盾！`);
+                }
+                // 气功师/练气期【血气相连】每回合回 10% 真气
+                if (hasPlayerClassPassive(me, 'qigong')) {
+                    const qiRec = Math.round(me.maxMp * 0.10);
+                    me.mp = Math.min(me.maxMp, me.mp + qiRec);
+                }
+                // 大魔导师【魔力源泉】每回合回 10% 魔力
+                if (me.classId === 'archmage') {
+                    me.mp = Math.min(me.maxMp, me.mp + Math.round(me.maxMp * 0.10));
+                }
+                // 骑士【气血冲天】每回合回 5% 生命上限
+                if (me.classId === 'knight') {
+                    const kHeal = Math.round(me.maxHp * 0.05);
+                    me.hp = Math.min(me.maxHp, me.hp + kHeal);
+                }
+                // 练气期【气道通神】每回合自动生成 10% 真气护盾（附加真气上限×0.2防御）
+                if (me.classId === 'qi_refining') {
+                    const shAdd = Math.round(me.maxMp * 0.10);
+                    me.shield = (me.shield || 0) + shAdd;
+                    me.shieldDef = Math.max(me.shieldDef || 0, Math.round(me.maxMp * 0.20));
+                    addLog(`☯️ 【${me.name}】被动【气道通神】自动生成 ${shAdd} 点真气护盾！`);
+                }
+
+                // 回合初结算持续负面（流血/侵蚀）
                 if (me.bleedStacks > 0) {
                     const bDmg = Math.max(1, Math.round((me.bleedDmg || 10) * me.bleedStacks));
                     me.hp = Math.max(1, me.hp - bDmg);
@@ -16681,14 +16769,41 @@
                     addLog(`🟣 【${me.name}】受魔力侵蚀 -${eDmg}`);
                 }
 
-                const effAtk = Math.round(me.atk * (1 + (me.empowerPct || 0) / 100 + (me.frenzyTurns > 0 ? (me.frenzyAtkPct || 100) / 100 : 0)));
+                // 狂战士被动【燃血】：每减少 1% 生命，攻击 +2%
+                let berserkMult = 1.0;
+                if (me.classId === 'berserker') {
+                    const lostPct = Math.max(0, Math.min(99, Math.floor(((me.maxHp - me.hp) / me.maxHp) * 100)));
+                    berserkMult += (lostPct * 2) / 100;
+                }
+                const effAtk = Math.round(me.atk * berserkMult * (1 + (me.empowerPct || 0) / 100 + (me.frenzyTurns > 0 ? (me.frenzyAtkPct || 100) / 100 : 0)));
                 const effSpi = Math.round(me.spi * (1 + (me.empowerPct || 0) / 100));
 
+                // 战士/狂战士被动【超限】：吸血溢出转护盾
+                const applyPvpLifesteal = (dmgVal, pct) => {
+                    if (dmgVal <= 0 || pct <= 0) return;
+                    const heal = Math.round(dmgVal * (pct / 100));
+                    if (heal <= 0) return;
+                    const over = (me.hp + heal) - me.maxHp;
+                    me.hp = Math.min(me.maxHp, me.hp + heal);
+                    if (hasPlayerClassPassive(me, 'warrior') && over > 0) {
+                        me.shield = (me.shield || 0) + over;
+                        addLog(`🛡️ 【${me.name}】被动【超限】将溢出吸血 ${over} 点转化为护盾！`);
+                    }
+                };
+
+                let swordMarkThisTurn = 0;
                 const dealPvpDmg = (defender, raw, ignoreDef = false) => {
                     if (!defender || defender.hp <= 0) return 0;
+                    // 影刺【影子庇佑】无视伤害次数
+                    if (defender.dodgeCharges && defender.dodgeCharges > 0) {
+                        defender.dodgeCharges -= 1;
+                        addLog(`🌑 【${defender.name}】触发【影子庇佑】，无视了本次攻击（剩余 ${defender.dodgeCharges} 次）！`);
+                        return 0;
+                    }
+                    const bonusEvaPct = defender.slipperyFootTurns > 0 ? (defender.slipperyFootEvaPct || 30) : 0;
                     const hitRes = (me.classId === 'mind_controller')
                         ? { isDodged: false, dmgMult: 1.0 }
-                        : resolveHitAndEvade(me.hit, defender.eva, 0);
+                        : resolveHitAndEvade(me.hit, Math.max(0, defender.eva - (me.classId === 'ballista' ? 20 : 0)), bonusEvaPct);
                     if (hitRes.isDodged) {
                         addLog(`💨 【${defender.name}】闪避了【${me.name}】的攻击！`);
                         return 0;
@@ -16696,7 +16811,10 @@
                     let finalRaw = raw;
                     if (me.stealthTurns > 0) {
                         me.stealthTurns = 0;
-                        finalRaw = Math.round(finalRaw * 2.0);
+                        finalRaw = Math.round(finalRaw * (Math.random() < 0.30 ? 3.0 : 2.0));
+                    }
+                    if (hasPlayerClassPassive(me, 'swordsman') && swordMarkThisTurn > 0) {
+                        finalRaw = Math.round(finalRaw * (1 + swordMarkThisTurn * 0.20));
                     }
                     if (hasPlayerClassPassive(me, 'warrior') && me.shield > 0) {
                         finalRaw += Math.round(me.shield * 0.20);
@@ -16704,17 +16822,36 @@
                     if (me.classId === 'knight') finalRaw += Math.round(me.hp * 0.10);
                     if (me.classId === 'mind_controller') finalRaw += Math.max(0, defender.eva * 5);
 
-                    const defDef = Math.round(defender.def * (defender.defStance ? 2 : 1) * (1 + (defender.empowerPct || 0) / 100));
-                    const dmg = calcDamageWithDefense(finalRaw, defDef, ignoreDef || me.classId === 'sword_grandmaster', hitRes.dmgMult);
+                    const tauntMult = defender.tauntDefTurns > 0 ? (defender.tauntDefPct || 50) / 100 : 0;
+                    let defDef = Math.round(defender.def * (1 + (defender.defStance ? 1 : 0) + tauntMult) * (1 + (defender.empowerPct || 0) / 100));
+                    if (me.classId === 'ballista') defDef = Math.round(defDef * 0.70);
+                    if (me.piercingTurns > 0) {
+                        const pierPct = Math.min(100, 40 + ((me.piercingLv || 1) - 1) * 20);
+                        defDef = Math.max(0, Math.round(defDef * (1 - pierPct / 100)));
+                    }
+
+                    let dmg = calcDamageWithDefense(finalRaw, defDef, ignoreDef || me.classId === 'sword_grandmaster', hitRes.dmgMult);
+                    if (me.classId === 'shadow_assassin' && effSpi > 0) {
+                        const sCost = Math.max(1, Math.round(me.maxMp * 0.03));
+                        if (me.mp >= sCost) {
+                            me.mp -= sCost;
+                            dmg += effSpi * 2;
+                        }
+                    }
+
                     if (dmg <= 0) {
                         addLog(`🛡️ 【${me.name}】未能击穿【${defender.name}】的防御（0伤害）！`);
                         return 0;
                     }
+                    swordMarkThisTurn += 1;
+
                     let rem = dmg;
                     if (defender.shield > 0) {
+                        if (defender.shieldDef > 0) rem = Math.max(0, rem - defender.shieldDef);
                         const abs = Math.min(defender.shield, rem);
                         defender.shield -= abs;
                         rem -= abs;
+                        if (defender.shield <= 0) defender.shieldDef = 0;
                     }
                     if (rem > 0) {
                         if (hasPlayerClassPassive(defender, 'qigong') && defender.hp - rem < 1 && defender.mp > 0) {
@@ -16725,12 +16862,12 @@
                         }
                         defender.hp = Math.max(0, defender.hp - rem);
                     }
-                    // 坦克/反伤反击
+                    // 坦克/骑士继承被动【反击】与【反伤】
                     if (hasPlayerClassPassive(defender, 'tank') && me.hp > 0) {
                         const cDmg = calcDamageWithDefense(defDef * 3, me.def, false, 1.0);
                         if (cDmg > 0) {
                             me.hp = Math.max(0, me.hp - cDmg);
-                            addLog(`🗡️ 【${defender.name}】坦克反击【${me.name}】-${cDmg}！`);
+                            addLog(`🗡️ 【${defender.name}】触发反击【${me.name}】-${cDmg}！`);
                         }
                     }
                     if (defender.thornsTurns > 0 && me.hp > 0) {
@@ -16741,98 +16878,286 @@
                     return dmg;
                 };
 
+                // 记录本次动作的同步视觉特效元数据
+                let vfxPayload = {
+                    seq: Date.now(),
+                    actorId: me.id,
+                    targetIds: [target.id],
+                    actionType,
+                    skillId: skillId || null,
+                    skillName: '',
+                    vfxStyle: 'slash',
+                    hitCount: 1,
+                    isSelfOrAlly: false,
+                    tookDmg: false,
+                    label: ''
+                };
+
                 if (actionType === 'attack') {
-                    playSignatureSfx('slash_single');
                     const hits = hasPlayerClassPassive(me, 'archer') ? 2 : 1;
                     let total = 0;
                     for (let i = 0; i < hits; i++) {
+                        if (target.hp <= 0) break;
                         let raw = me.classId === 'ballista' ? effAtk * 4 : effAtk;
                         if (hasPlayerClassPassive(me, 'mage')) raw += effSpi;
                         total += dealPvpDmg(target, raw, false);
                     }
+                    if (me.frenzyTurns > 0) applyPvpLifesteal(total, 30);
                     addLog(`⚔️ 【${me.name}】普攻${hits > 1 ? '(2连发)' : ''}【${target.name}】，共造成 ${total} 点伤害！`);
+                    vfxPayload.hitCount = hits;
+                    vfxPayload.tookDmg = total > 0;
+                    vfxPayload.label = total > 0 ? `-${total}` : '🛡️0';
+                    vfxPayload.vfxStyle = me.classId === 'ballista' ? 'cannon_beam'
+                        : (hasPlayerClassPassive(me, 'archer') ? 'arrow' : (hasPlayerClassPassive(me, 'mage') ? 'magic_bolt' : 'slash'));
                 } else if (actionType === 'defend') {
-                    playSignatureSfx('shield_up');
                     me.defStance = true;
                     addLog(`🛡️ 【${me.name}】进入基础防御姿态（防御力 +100%）！`);
+                    vfxPayload.isSelfOrAlly = true;
+                    vfxPayload.targetIds = [me.id];
                 } else if (actionType === 'skill' && skillId) {
                     const sk = (me.learnedSkills || []).find(s => s.id === skillId);
                     if (!sk) return;
                     const cost = getSkillMpCost(me, sk);
                     if (me.mp < cost) return showToast(`${me.energyName || '精力'}不足（需 ${cost} 点）！`);
                     me.mp = Math.max(0, me.mp - cost);
-                    playSignatureSfx('arcane_beam');
+                    vfxPayload.skillName = sk.name;
 
                     if (sk.id === 'holy_heal' || sk.id === 'group_heal') {
                         const heal = Math.max(30, Math.round(effSpi * (5 + (sk.level - 1))));
+                        vfxPayload.isSelfOrAlly = true;
                         if (sk.id === 'group_heal') {
                             allies.forEach(a => { a.hp = Math.min(a.maxHp, a.hp + heal); });
+                            vfxPayload.targetIds = allies.map(a => a.id);
                             addLog(`💚 【${me.name}】释放【群体治疗 Lv.${sk.level}】，友方全体回复 +${heal} 生命！`);
                         } else {
                             me.hp = Math.min(me.maxHp, me.hp + heal);
+                            vfxPayload.targetIds = [me.id];
                             addLog(`✨ 【${me.name}】释放【圣愈术 Lv.${sk.level}】，回复 +${heal} 生命！`);
                         }
-                    } else if (sk.id === 'mana_shield' || sk.id === 'group_shield' || sk.id === 'blood_shield') {
-                        const sh = sk.id === 'mana_shield'
-                            ? Math.round(effSpi * 10)
-                            : Math.round(me.maxHp * (0.35 + (sk.level - 1) * 0.15));
-                        if (sk.id === 'group_shield') {
+                        vfxPayload.label = `+${heal}`;
+                    } else if (['mana_shield', 'group_shield', 'blood_shield', 'burn_origin', 'man_sword_unity', 'summon_stone_spirit', 'skillful_force'].includes(sk.id)) {
+                        let sh = 0;
+                        if (sk.id === 'mana_shield') {
+                            sh = Math.round(effSpi * 10);
+                            me.shieldDef = Math.max(me.shieldDef || 0, Math.round(effSpi * (1 + (sk.level - 1) * 0.5)));
+                        } else if (sk.id === 'blood_shield') {
+                            me.hp = Math.max(1, me.hp - Math.round(me.hp * 0.05));
+                            sh = Math.round(me.hp * (2 + sk.level - 1));
+                        } else if (sk.id === 'burn_origin') {
+                            sh = Math.round(me.maxMp * (2 + sk.level - 1));
+                        } else if (sk.id === 'man_sword_unity') {
+                            const layers = 5 + (sk.level - 1) * 2;
+                            sh = Math.round(me.maxMp * (0.10 + (sk.level - 1) * 0.05) * layers);
+                        } else if (sk.id === 'summon_stone_spirit') {
+                            sh = Math.max(50, Math.round(effSpi * 2 * sk.level));
+                        } else if (sk.id === 'skillful_force') {
+                            sh = Math.round(me.maxMp * 0.15 * sk.level);
+                        } else {
+                            sh = Math.round(me.maxHp * (0.35 + (sk.level - 1) * 0.15));
+                        }
+                        vfxPayload.isSelfOrAlly = true;
+                        if (sk.id === 'group_shield' || sk.id === 'summon_stone_spirit') {
                             allies.forEach(a => { a.shield = (a.shield || 0) + sh; });
-                            addLog(`🛡️ 【${me.name}】释放【群体护盾 Lv.${sk.level}】，友方全体获得 +${sh} 护盾！`);
+                            vfxPayload.targetIds = allies.map(a => a.id);
+                            addLog(`🛡️ 【${me.name}】释放【${sk.name} Lv.${sk.level}】，友方全体获得 +${sh} 护盾！`);
                         } else {
                             me.shield = (me.shield || 0) + sh;
+                            vfxPayload.targetIds = [me.id];
                             addLog(`🛡️ 【${me.name}】释放【${sk.name} Lv.${sk.level}】，获得 +${sh} 护盾！`);
                         }
+                        vfxPayload.label = `🛡️+${sh}`;
                     } else if (sk.id === 'empower') {
                         const addP = 50 * sk.level;
                         allies.forEach(a => { a.empowerPct = Math.min(300, (a.empowerPct || 0) + addP); });
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = allies.map(a => a.id);
+                        vfxPayload.label = `⬆️+${addP}%`;
                         addLog(`⬆️ 【${me.name}】释放【强化 Lv.${sk.level}】，友方全属性 +${addP}%！`);
                     } else if (sk.id === 'thorns') {
                         me.defStance = true;
                         me.thornsTurns = 5;
                         me.thornsLv = sk.level;
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = '🌵反伤';
                         addLog(`🌵 【${me.name}】开启【反伤 Lv.${sk.level}】与防守姿态！`);
-                    } else if (sk.id === 'frenzy') {
+                    } else if (sk.id === 'frenzy' || sk.id === 'khorne_rage') {
                         me.frenzyTurns = 3 + sk.level;
                         me.frenzyAtkPct = 100 + (sk.level - 1) * 50;
-                        addLog(`🔥 【${me.name}】开启【暴怒 Lv.${sk.level}】，攻击力大幅提升！`);
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = `🔥${sk.name}`;
+                        addLog(`🔥 【${me.name}】开启【${sk.name} Lv.${sk.level}】，攻击力与吸血大幅提升！`);
                     } else if (sk.id === 'stealth') {
                         me.stealthTurns = 2;
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = '🌑强隐';
                         addLog(`🌑 【${me.name}】进入【强隐 Lv.${sk.level}】，下次攻击伤害翻倍！`);
                     } else if (sk.id === 'contemplate_all') {
                         me.mp = me.maxMp;
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = '🧘回满';
                         addLog(`🧘 【${me.name}】释放【观想万物】，回满 100% 能量！`);
-                    } else if (['mana_bomb', 'cleave_sweep', 'mind_blast', 'micro_control'].includes(sk.id)) {
+                    } else if (sk.id === 'strength_boost') {
+                        const addStr = (sk.level * 4) * (1 + Math.floor(sk.level / 3));
+                        me.str = (me.str || 10) + addStr;
+                        const oldHp = me.hp, oldMp = me.mp;
+                        recalcPvpPlayerDerived(me);
+                        me.hp = Math.min(me.maxHp, oldHp);
+                        me.mp = Math.min(me.maxMp, oldMp);
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = `💪力量+${addStr}`;
+                        addLog(`💪 【${me.name}】释放【力量加强 Lv.${sk.level}】，本战力量 +${addStr}（当前攻击 ${me.atk}）！`);
+                    } else if (sk.id === 'slippery_foot') {
+                        me.slipperyFootTurns = 3;
+                        me.slipperyFootEvaPct = 30 + (sk.level - 1) * 10;
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = `💨脚滑+${me.slipperyFootEvaPct}%`;
+                        addLog(`💨 【${me.name}】释放【脚滑 Lv.${sk.level}】，3 回合内技能闪避 +${me.slipperyFootEvaPct}%！`);
+                    } else if (sk.id === 'rapid_reload') {
+                        me.empowerPct = Math.min(300, (me.empowerPct || 0) + 20 * sk.level);
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = '🏹快速装填';
+                        addLog(`🏹 【${me.name}】释放【快速装填 Lv.${sk.level}】，装弹效率与战力提升 +${20 * sk.level}%！`);
+                    } else if (sk.id === 'piercing_arrow') {
+                        me.piercingTurns = 5;
+                        me.piercingLv = sk.level;
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = '🏹穿甲箭';
+                        addLog(`🏹 【${me.name}】开启【穿甲箭 Lv.${sk.level}】（5回合无视大量防御）！`);
+                    } else if (sk.id === 'arrow_rain') {
+                        me.arrowRainTurns = 5;
+                        me.arrowRainLv = sk.level;
+                        me.empowerPct = Math.min(300, (me.empowerPct || 0) + 30 * sk.level);
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = '🌧️箭雨';
+                        addLog(`🌧️ 【${me.name}】开启【箭雨 Lv.${sk.level}】，后续攻击大幅强化！`);
+                    } else if (sk.id === 'taunt') {
+                        me.tauntDefTurns = 3;
+                        me.tauntDefPct = 50 * sk.level;
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = `📣防+${me.tauntDefPct}%`;
+                        addLog(`📣 【${me.name}】释放【嘲讽 Lv.${sk.level}】，自身防御提升 +${me.tauntDefPct}%！`);
+                    } else if (sk.id === 'meditation') {
+                        const addP = 100 + (sk.level - 1) * 20;
+                        me.spi = Math.round(me.spi * (1 + addP / 100));
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = `🧘精+${addP}%`;
+                        addLog(`🧘 【${me.name}】进入【冥想 Lv.${sk.level}】，精神强度永久提升 +${addP}%！`);
+                    } else if (sk.id === 'shadow_blessing') {
+                        const addC = 5 + (sk.level - 1);
+                        me.dodgeCharges = (me.dodgeCharges || 0) + addC;
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = `🌑庇佑×${me.dodgeCharges}`;
+                        addLog(`🌑 【${me.name}】开启【影子庇佑 Lv.${sk.level}】，可无视接下来 ${me.dodgeCharges} 次攻击！`);
+                    } else if (sk.id === 'shadow_erase') {
+                        target.eva = Math.max(0, target.eva - 100);
+                        vfxPayload.label = '🌑闪避-100';
+                        addLog(`🌑 【${me.name}】对【${target.name}】释放【影子抹除 Lv.${sk.level}】，使其闪避 -100！`);
+                    } else if (sk.id === 'clear_conscience') {
+                        me.bleedStacks = 0; me.erosionStacks = 0; me.erosionTurns = 0;
+                        enemies.forEach(en => { en.shield = 0; en.shieldDef = 0; en.empowerPct = 0; en.dodgeCharges = 0; });
+                        const addP = 50 * sk.level;
+                        me.empowerPct = Math.min(400, (me.empowerPct || 0) + addP);
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = `✨无愧+${addP}%`;
+                        addLog(`✨ 【${me.name}】释放【无愧于心 Lv.${sk.level}】：净化自身负面、驱散敌方所有护盾与增益，全属性 +${addP}%！`);
+                    } else if (sk.id === 'infinite_vitality') {
+                        const hpCost = Math.max(1, Math.round(me.maxHp * 0.05));
+                        me.hp = Math.max(1, me.hp - hpCost);
+                        const addPct = 5 + (sk.level - 1) * 2;
+                        me.maxHp = Math.round(me.maxHp * (1 + addPct / 100));
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = `🔥血上限+${addPct}%`;
+                        addLog(`🔥 【${me.name}】开启【无限血气 Lv.${sk.level}】，本战生命上限提升 +${addPct}%！`);
+                    } else if (sk.id === 'mind_sync') {
+                        const boost = Math.max(5, Math.round(effSpi * 0.05 * sk.level));
+                        allies.forEach(a => { a.atk += boost; a.def += boost; a.spd += boost; a.spi += boost; a.hit += boost; a.eva += boost; });
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = allies.map(a => a.id);
+                        vfxPayload.label = `🧠全属+${boost}`;
+                        addLog(`🧠 【${me.name}】释放【精神同步 Lv.${sk.level}】，友方全体全属性 +${boost}！`);
+                    } else if (sk.id === 'purify_soundwave') {
+                        me.bleedStacks = 0; me.erosionStacks = 0; me.erosionTurns = 0;
+                        target.shield = 0; target.empowerPct = 0;
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = '🔊净化驱散';
+                        addLog(`🔊 【${me.name}】释放【净化声波 Lv.${sk.level}】，净化自身负面并驱散【${target.name}】增益！`);
+                    } else if (['sword_heart', 'blood_aura', 'compressed_qi', 'enhance_summons', 'wolf_king_call', 'wolf_king_call_mutant', 'chain_link', 'despair_devour'].includes(sk.id)) {
+                        const addP = 25 * sk.level;
+                        me.empowerPct = Math.min(300, (me.empowerPct || 0) + addP);
+                        vfxPayload.isSelfOrAlly = true;
+                        vfxPayload.targetIds = [me.id];
+                        vfxPayload.label = `✨${sk.name}`;
+                        addLog(`✨ 【${me.name}】施展了增益技能【${sk.name} Lv.${sk.level}】，自身战力提升 +${addP}%！`);
+                    } else if (['mana_bomb', 'cleave_sweep', 'mind_blast', 'micro_control', 'summon_fire_spirit'].includes(sk.id)) {
                         const baseStat = (sk.id === 'cleave_sweep') ? effAtk : Math.max(effSpi, effAtk);
                         const mult = 1.6 + (sk.level - 1) * 0.5;
                         let sumD = 0;
                         enemies.forEach(en => { sumD += dealPvpDmg(en, Math.round(baseStat * mult), false); });
+                        if (sk.id === 'cleave_sweep') applyPvpLifesteal(sumD, 30);
+                        vfxPayload.targetIds = enemies.map(e => e.id);
+                        vfxPayload.tookDmg = sumD > 0;
+                        vfxPayload.label = `-${sumD}`;
                         addLog(`💥 【${me.name}】释放群体技【${sk.name} Lv.${sk.level}】，对敌方全体共造成 ${sumD} 点伤害！`);
                     } else if (sk.id === 'mana_erosion' || sk.id === 'wolf_bite' || sk.id === 'poison_arrow') {
                         const baseStat = sk.id === 'mana_erosion' ? effSpi : effAtk;
                         const dmg = dealPvpDmg(target, Math.round(baseStat * (1.2 + (sk.level - 1) * 0.4)), sk.id !== 'wolf_bite');
                         if (sk.id === 'mana_erosion') { target.erosionStacks = (target.erosionStacks || 0) + 1; target.erosionTurns = 4; }
                         else { target.bleedStacks = (target.bleedStacks || 0) + 1; target.bleedDmg = Math.max(10, Math.round(dmg * 0.35)); }
+                        vfxPayload.tookDmg = dmg > 0;
+                        vfxPayload.label = `-${dmg}`;
                         addLog(`☠️ 【${me.name}】对【${target.name}】释放【${sk.name} Lv.${sk.level}】造成 ${dmg} 点伤害并附加持续负面！`);
                     } else {
-                        // 通用高伤单体技能（重击/怒击/强袭/气功波/万剑/无边剑气/魔力冲击/鬼刺等）
+                        // 单体/多段爆发技（重击/怒击/强袭/气功波/万剑/无边剑气/魔力冲击/影子狂击/乱劈等）
                         const isSpiSkill = ['ghost_spike', 'mana_impact', 'dimension_slash', 'mind_trauma'].includes(sk.id);
                         const isMpSkill = ['qigong_wave', 'ten_thousand_swords', 'boundless_sword_qi'].includes(sk.id);
-                        const baseVal = isMpSkill
+                        let hits = 1;
+                        if (sk.id === 'ten_thousand_swords') hits = 3 + (sk.level - 1);
+                        else if (sk.id === 'wild_chop') hits = 5 + (sk.level - 1);
+                        else if (sk.id === 'shadow_flurry') hits = 8;
+                        else if (sk.id === 'boundless_sword_qi') hits = 12;
+
+                        const totalBaseVal = isMpSkill
                             ? Math.round(me.maxMp * (0.20 + sk.level * 0.08))
                             : (isSpiSkill ? effSpi : effAtk) * (1.8 + (sk.level - 1) * 0.6);
+                        const singleRaw = Math.max(1, Math.round(totalBaseVal / hits));
                         const ignoreD = ['mana_impact', 'boundless_sword_qi', 'ghost_spike'].includes(sk.id);
-                        const dmg = dealPvpDmg(target, Math.round(baseVal), ignoreD);
-                        if (sk.id === 'raging_strike' && dmg > 0) {
-                            me.hp = Math.min(me.maxHp, me.hp + Math.round(dmg * 0.5));
+
+                        let dmg = 0;
+                        for (let h = 0; h < hits; h++) {
+                            if (target.hp <= 0) break;
+                            dmg += dealPvpDmg(target, singleRaw, ignoreD);
                         }
-                        addLog(`⚡ 【${me.name}】释放【${sk.name} Lv.${sk.level}】命中【${target.name}】，造成 ${dmg} 点伤害！`);
+                        if (sk.id === 'raging_strike' || sk.id === 'wild_chop') {
+                            applyPvpLifesteal(dmg, sk.id === 'raging_strike' ? 50 : 30);
+                        }
+                        vfxPayload.hitCount = hits;
+                        vfxPayload.tookDmg = dmg > 0;
+                        vfxPayload.label = dmg > 0 ? `-${dmg}` : '🛡️0';
+                        addLog(`⚡ 【${me.name}】释放【${sk.name} Lv.${sk.level}】${hits > 1 ? `(${hits}连击)` : ''}命中【${target.name}】，造成 ${dmg} 点伤害！`);
                     }
                 }
 
                 // 递减自身回合 Buff
                 if (me.thornsTurns > 0) me.thornsTurns -= 1;
                 if (me.frenzyTurns > 0) me.frenzyTurns -= 1;
+                if (me.slipperyFootTurns > 0) me.slipperyFootTurns -= 1;
+                if (me.piercingTurns > 0) me.piercingTurns -= 1;
+                if (me.tauntDefTurns > 0) me.tauntDefTurns -= 1;
 
                 // 胜负判定
                 const aliveA = Object.values(players).filter(x => x.team === 'A' && x.hp > 0);
@@ -16844,6 +17169,7 @@
                         players,
                         phase: 'finished',
                         winnerTeam: winTeam,
+                        lastActionVfx: vfxPayload,
                         logs: newLogs.slice(-20),
                         updatedAt: Date.now()
                     }, { merge: true });
@@ -16863,6 +17189,7 @@
                             round: nextRound,
                             turnIdx: nextIdx,
                             turnPlayerId: candId,
+                            lastActionVfx: vfxPayload,
                             logs: newLogs.slice(-20),
                             updatedAt: Date.now()
                         }, { merge: true });
@@ -17277,24 +17604,27 @@
 
                 const renderFighterCard = (f, isEnemy) => {
                     const hpPct = Math.max(0, Math.min(100, Math.round((f.hp / f.maxHp) * 100)));
+                    const shVal = f.shield || 0;
+                    const shPct = shVal > 0 ? Math.min(100, Math.max(8, Math.round((shVal / f.maxHp) * 100))) : 0;
                     const isTarget = isEnemy && f.id === pvpState.selectedTargetId && f.hp > 0;
                     const isActing = room.turnPlayerId === f.id && room.phase === 'battle';
                     return `
-                        <div data-pvp-target="${f.id}" class="${isEnemy ? 'pvp-enemy-card cursor-pointer' : ''} p-2.5 rounded-xl border transition ${
+                        <div id="pvp-fighter-${f.id}" data-pvp-target="${f.id}" class="${isEnemy ? 'pvp-enemy-card cursor-pointer' : ''} relative p-2.5 rounded-xl border transition ${
                             f.hp <= 0 ? 'bg-slate-950/50 border-slate-800 opacity-45'
                                 : (isActing ? 'border-amber-400 bg-amber-950/30 shadow-md'
                                     : (isTarget ? 'border-rose-500 bg-slate-900' : 'border-slate-800 bg-slate-950'))
                         }">
-                            <div class="flex items-center justify-between text-xs mb-1">
+                            <div class="flex items-center justify-between text-xs mb-1 gap-1">
                                 <span class="font-black ${isEnemy ? 'text-rose-300' : 'text-sky-300'} truncate">${isTarget ? '🎯 ' : ''}${f.name} [${f.className}]</span>
-                                <span class="text-[10px] ${f.hp <= 0 ? 'text-slate-500' : 'text-amber-400 font-bold'}">${f.hp <= 0 ? '💀阵亡' : (isActing ? '⚡行动中' : `速:${f.spd}`)}</span>
+                                <span class="text-[10px] flex-shrink-0 ${f.hp <= 0 ? 'text-slate-500' : 'text-amber-400 font-bold'}">${f.hp <= 0 ? '💀阵亡' : (isActing ? '⚡行动中' : `速:${f.spd}`)}</span>
                             </div>
-                            <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden mb-1">
-                                <div class="h-full ${isEnemy ? 'bg-rose-500' : 'bg-emerald-500'}" style="width:${hpPct}%"></div>
+                            <div class="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden mb-1 relative">
+                                <div class="h-full ${isEnemy ? 'bg-rose-500' : 'bg-emerald-500'} transition-all" style="width:${hpPct}%"></div>
+                                ${shVal > 0 ? `<div class="absolute top-0 left-0 h-full bg-gradient-to-r from-sky-400/90 to-cyan-300/95 transition-all pointer-events-none" style="width:${shPct}%"></div>` : ''}
                             </div>
-                            <div class="flex items-center justify-between text-[10px] text-slate-300">
-                                <span>HP:${f.hp}/${f.maxHp}${f.shield > 0 ? ` <b class="text-sky-300">(🛡️+${f.shield})</b>` : ''}</span>
-                                <span>${f.energyName || '蓝'}:${f.mp}/${f.maxMp}</span>
+                            <div class="flex items-center justify-between text-[10px] text-slate-300 gap-1">
+                                <span class="truncate">HP:${f.hp}/${f.maxHp}${shVal > 0 ? ` <span class="px-1 py-0.2 rounded bg-sky-950 text-sky-300 border border-sky-400/60 font-black">🛡️+${shVal}</span>` : ''}</span>
+                                <span class="flex-shrink-0">${f.energyName || '蓝'}:${f.mp}/${f.maxMp}</span>
                             </div>
                         </div>
                     `;
