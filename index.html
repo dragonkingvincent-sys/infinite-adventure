@@ -1962,9 +1962,7 @@
             enhance_summons: {
 
                 id: 'enhance_summons', classId: 'summoner', isAdvSkill: true, name: '强化召唤物',
-
-                desc: '对己方所有召唤物进行强化，全属性 ×2；每升1级倍数 +2（最高6级）。'
-
+                desc: '对己方所有召唤物进行线性强化：基于初始属性额外 +1倍（按 2→3→4→5 倍线性叠加，不按次方累乘）；每升1级每次强化额外 +1倍（最高6级）。'
             },
 
             summon_fire_spirit: {
@@ -7906,23 +7904,28 @@
 
                 addBattleLog(battle, `🔥 【燃烧本源 Lv.${sk.level}】：扣除10%真气上限，获得 ${fakeQi} 点虚假真气护盾！`);
 
-            } else if (sk.id === 'enhance_summons') {
+            } else if (sk.id === 'enhance_summons') {
+                const addMult = sk.level; // Lv.1 每次 +1倍（1→2→3→4→5倍）；Lv.2 每次 +2倍（1→3→5倍）
+                let latestMult = 1 + addMult;
+                getAliveSummons(battle).forEach(s => {
+                    if (!s.baseEnhanceStats) {
+                        s.baseEnhanceStats = {
+                            maxHp: s.maxHp,
+                            atk: s.atk,
+                            def: s.def
+                        };
+                        s.enhanceMult = 1;
+                    }
+                    s.enhanceMult = (s.enhanceMult || 1) + addMult;
+                    latestMult = s.enhanceMult;
 
-                const mult = 2 * sk.level;
-
-                getAliveSummons(battle).forEach(s => {
-
-                    s.maxHp *= mult;
-
-                    s.hp *= mult;
-
-                    s.atk *= mult;
-
-                    s.def *= mult;
-
-                });
-
-                addBattleLog(battle, `📯 【强化召唤物 Lv.${sk.level}】：己方所有召唤物全属性 ×${mult} 倍！`);
+                    const oldMaxHp = s.maxHp;
+                    s.maxHp = Math.round(s.baseEnhanceStats.maxHp * s.enhanceMult);
+                    s.hp = Math.min(s.maxHp, s.hp + Math.max(0, s.maxHp - oldMaxHp));
+                    s.atk = Math.round(s.baseEnhanceStats.atk * s.enhanceMult);
+                    s.def = Math.round(s.baseEnhanceStats.def * s.enhanceMult);
+                });
+                addBattleLog(battle, `📯 【强化召唤物 Lv.${sk.level}】：己方所有召唤物全属性线性强化 +${addMult} 倍（当前已强化至初始属性的 ×${latestMult} 倍）！`);
 
             } else if (sk.id === 'summon_fire_spirit') {
 
