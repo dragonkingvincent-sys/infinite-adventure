@@ -5408,6 +5408,8 @@
             const g = Math.max(0, finalLv - 1);
             // 召唤物技能等级：初始1级，每5级+1级，召唤师被动额外+2级
             const skLv = 1 + Math.floor(g / 5) + (isSummoner ? 2 : 0);
+            const curBattle = state.run && state.run.battle;
+            const empHpMult = (curBattle && curBattle.empowerTurns > 0 && curBattle.empowerPct > 0) ? (1 + curBattle.empowerPct / 100) : 1;
 
             if (type === 'paladin') {
                 return {
@@ -6424,7 +6426,7 @@
                 const healW = Math.round(worldBoss.maxHp * 0.10);
                 worldBoss.hp = Math.min(worldBoss.maxHp, worldBoss.hp + healW);
                 const repelDmg = Math.max(1, Math.round(worldBoss.maxMp * 0.01));
-                applyIncomingDamageToPlayer(battle, repelDmg, null);
+                applyIncomingDamageToPlayer(battle, repelDmg, null, true);
                 getAliveSummons(battle).forEach(s => { s.hp = Math.max(0, s.hp - repelDmg); });
                 addBattleLog(battle, `🌌 【世界意识】被动【异世界至高】回复 ${healW} 生命，被动【排斥异己】对全场敌方造成 ${repelDmg} 点（1%蓝量）伤害！`);
                 if (p.hp <= 0) {
@@ -7931,11 +7933,13 @@
                     s.enhanceMult = (s.enhanceMult || 1) + addMult;
                     latestMult = s.enhanceMult;
 
-                    const oldMaxHp = s.maxHp;
-                    s.maxHp = Math.round(s.baseEnhanceStats.maxHp * s.enhanceMult);
-                    s.hp = Math.min(s.maxHp, s.hp + Math.max(0, s.maxHp - oldMaxHp));
-                    s.atk = Math.round(s.baseEnhanceStats.atk * s.enhanceMult);
-                    s.def = Math.round(s.baseEnhanceStats.def * s.enhanceMult);
+                    const addHp = Math.round(s.baseEnhanceStats.maxHp * addMult);
+                    const addAtk = Math.round(s.baseEnhanceStats.atk * addMult);
+                    const addDef = Math.round(s.baseEnhanceStats.def * addMult);
+                    s.maxHp += addHp;
+                    s.hp = Math.min(s.maxHp, s.hp + addHp);
+                    s.atk += addAtk;
+                    s.def += addDef;
                 });
                 addBattleLog(battle, `📯 【强化召唤物 Lv.${sk.level}】：己方所有召唤物全属性线性强化 +${addMult} 倍（当前已强化至初始属性的 ×${latestMult} 倍）！`);
 
@@ -8123,7 +8127,7 @@
             return Math.round(baseDef * mult);
         }
 
-        function applyIncomingDamageToPlayer(battle, dmg, attackerMonster) {
+        function applyIncomingDamageToPlayer(battle, dmg, attackerMonster, isAoeHit = false) {
             const p = state.run.player;
             const guardianSk = p.learnedSkills.find(s => s.id === 'guardian_passive');
             // 影刺【影子庇佑】/ 剑道宗师【人剑合一】：无视敌方普攻与技能伤害
@@ -8177,7 +8181,7 @@
             let rem = dmg;
             let shieldAbsorbed = 0;
 
-            const isAoeBoss = attackerMonster && (attackerMonster.id === 'skeleton_king' || attackerMonster.id === 'bandit_chief' || attackerMonster.id === 'visiting_demon_king' || (attackerMonster.id === 'bone_emperor' ));
+            const isAoeBoss = isAoeHit || (attackerMonster && (attackerMonster.id === 'skeleton_king' || attackerMonster.id === 'bandit_chief' || attackerMonster.id === 'visiting_demon_king' || attackerMonster.id === 'bone_emperor'));
             const paladin = getActivePaladin(battle);
             if (paladin && paladin.hp > 0 && !isAoeBoss) {
                 const empMult = 1 + (battle.empowerTurns > 0 ? (battle.empowerPct || 0) / 100 : 0);
@@ -8192,15 +8196,21 @@
                 return actualPalDmg;
             }
             const aliveWolves = getAliveSummons(battle).filter(s => s.type === 'wolf_pack' || s.type === 'werewolf');
-            if (!guardianSk && aliveWolves.length > 0 && battle.tauntDefTurns <= 0 && attackerMonster && !isAoeBoss) {
-                const totalTargets = 1 + aliveWolves.length;
+            const tankableSums = getAliveSummons(battle).filter(s => ['wolf_pack', 'werewolf', 'stone_spirit'].includes(s.type));
+            if (!guardianSk && tankableSums.length > 0 && battle.tauntDefTurns <= 0 && attackerMonster && !isAoeBoss) {
+                const totalTargets = 1 + tankableSums.length;
                 const pickIdx = Math.floor(Math.random() * totalTargets);
                 if (pickIdx > 0) {
-                    const hitWolf = aliveWolves[pickIdx - 1];
-                    const wolfDmg = hitWolf.defStance ? Math.max(1, Math.round(rem * 0.5)) : rem;
-                    hitWolf.hp = Math.max(0, hitWolf.hp - wolfDmg);
-                    addBattleLog(battle, `🐺 敌方攻击了你的伙伴【${hitWolf.name} Lv.${hitWolf.level}】，造成 ${wolfDmg} 点伤害（剩余生命 ${hitWolf.hp}/${hitWolf.maxHp}）！`);
-                    return wolfDmg;
+                    const hitSum = tankableSums[pickIdx - 1];
+                    const empMult = 1 + (battle.empowerTurns > 0 ? (battle.empowerPct || 0) / 100 : 0);
+                    const dNow = getCombatPlayerStats(battle);
+                    const playerEffDef = getEffectivePlayerDef(battle, dNow.def);
+                    const sumDef = Math.round((hitSum.def || 0) * empMult);
+                    const reduced = Math.max(0, rem - Math.max(0, sumDef - playerEffDef));
+                    const sumDmg = hitSum.defStance ? Math.round(reduced * 0.5) : reduced;
+                    hitSum.hp = Math.max(0, hitSum.hp - sumDmg);
+                    addBattleLog(battle, `🐾 敌方攻击了你的伙伴【${hitSum.name} Lv.${hitSum.level}】(防御${sumDef})，造成 ${sumDmg} 点伤害（剩余生命 ${hitSum.hp}/${hitSum.maxHp}）！`);
+                    return sumDmg;
                 }
             }
 
@@ -9809,7 +9819,7 @@
                         const pDmg = calcDamageWithDefense(rawBurst, effDef, false, finalHitMult);
                         playSignatureSfx('doomsday_laser');
                         playSingleImpactVfx(pRect, 'arcane_beam', `💥 魂力 -${pDmg}`);
-                        const actual = applyIncomingDamageToPlayer(battle, pDmg, m);
+                        const actual = applyIncomingDamageToPlayer(battle, pDmg, m, true);
                         aliveSummons.forEach(s => {
                             const sEmpMult = 1 + (battle.empowerTurns > 0 ? battle.empowerPct / 100 : 0);
                             const sDmg = calcDamageWithDefense(rawBurst, Math.round(s.def * sEmpMult), false, 1.0);
@@ -15659,12 +15669,20 @@
             return { totalScore, bestLabel, clearedBadgesCount };
         }
 
+        function formatCompactNumber(num) {
+            const n = Number(num) || 0;
+            if (n < 1e8) return Math.round(n).toLocaleString();
+            if (n < 1e12) return (n / 1e8).toFixed(2).replace(/\.00$/, '') + '亿';
+            if (n < 1e16) return (n / 1e12).toFixed(2).replace(/\.00$/, '') + '万亿';
+            return n.toExponential(2);
+        }
+
         function buildPlayerEquippedBadgeHtml(achId) {
             if (!achId) return '';
             const ach = ACHIEVEMENTS.find(a => a.id === achId);
             if (!ach) return '';
             const st = getAchievementTierStyle(ach.tier);
-            return `<span class="text-[10px] px-1.5 py-0.5 rounded border ${st.badgeClass}"><span class="${st.textClass}">【${ach.name}】</span></span>`;
+            return `<span class="inline-block whitespace-nowrap text-[10px] px-1.5 py-0.5 rounded border ${st.badgeClass}"><span class="${st.textClass}">【${ach.name}】</span></span>`;
         }
 
         try {
@@ -15989,110 +16007,37 @@
                         if (b.achievementCount !== a.achievementCount) return b.achievementCount - a.achievementCount;
                         return b.stageScore - a.stageScore;
                     } else if (currentLeaderboardTab === 'damage') {
-                        const statA = getPlayerChallengeStatForDiff(a, 'damage', currentLeaderboardDiff);
-                        const statB = getPlayerChallengeStatForDiff(b, 'damage', currentLeaderboardDiff);
-                        if ((statB.maxDamage || 0) <= 0 && (statA.maxDamage || 0) <= 0) return 0;
-                        if ((statB.maxDamage || 0) <= 0) return -1;
-                        if ((statA.maxDamage || 0) <= 0) return 1;
-                        return isBetterDamageRecord(statB, statA, currentLeaderboardDiff !== 'all') ? 1 : -1;
-                    } else {
-                        const statA = getPlayerChallengeStatForDiff(a, 'survival', currentLeaderboardDiff);
-                        const statB = getPlayerChallengeStatForDiff(b, 'survival', currentLeaderboardDiff);
-                        if ((statB.maxRounds || 0) <= 0 && (statA.maxRounds || 0) <= 0) return 0;
-                        if ((statB.maxRounds || 0) <= 0) return -1;
-                        if ((statA.maxRounds || 0) <= 0) return 1;
-                        return isBetterSurvivalRecord(statB, statA, currentLeaderboardDiff !== 'all') ? 1 : -1;
-                    }
-                });
-
-                if (sorted.length > 0 && sorted[0].isMe) {
-                    const topDmg = getPlayerChallengeStatForDiff(sorted[0], 'damage', 'all').maxDamage;
-                    const topSurv = getPlayerChallengeStatForDiff(sorted[0], 'survival', 'all').maxRounds;
-                    const topEnd = getPlayerChallengeStatForDiff(sorted[0], 'endless', 'all').maxFloor;
-                    if (currentLeaderboardTab === 'endless' && topEnd > 0 && !state.unlockedAchievements['ach_rank_endless']) {
-                        state.unlockedAchievements['ach_rank_endless'] = true;
-                        savePersistedGameData();
-                        showToast('🏆 恭喜荣登无限挑战榜首，解锁发光成就【世界第一】！');
-                    }
-                    if (currentLeaderboardTab === 'damage' && topDmg > 0 && !state.unlockedAchievements['ach_rank_damage']) {
-                        state.unlockedAchievements['ach_rank_damage'] = true;
-                        savePersistedGameData();
-                        showToast('🏆 恭喜荣登输出挑战榜首，解锁金色成就【爆星战力】！');
-                    }
-                    if (currentLeaderboardTab === 'survival' && topSurv > 0 && !state.unlockedAchievements['ach_rank_survival']) {
-                        state.unlockedAchievements['ach_rank_survival'] = true;
-                        savePersistedGameData();
-                        showToast('🏆 恭喜荣登生存挑战榜首，解锁金色成就【不死传说】！');
-                    }
-                }
-
-                const myIdx = sorted.findIndex(p => p.isMe);
-                myRankEl.textContent = myIdx >= 0
-                    ? `我的当前排名：第 ${myIdx + 1} 名（共 ${sorted.length} 位玩家）`
-                    : `共收录 ${sorted.length} 位玩家`;
-
-                if (sorted.length === 0) {
-                    listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">该难度下暂无排行榜记录，快去挑战上榜吧！</div>`;
-                    return;
-                }
-
-                listEl.innerHTML = sorted.map((item, idx) => {
-                    const rank = idx + 1;
-                    const rankBadge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : `#${rank}`));
-                    const rankColor = rank === 1
-                        ? 'border-amber-400 bg-amber-950/30'
-                        : (rank === 2 ? 'border-slate-400 bg-slate-800/60' : (rank === 3 ? 'border-amber-700 bg-amber-950/15' : 'border-slate-800 bg-slate-950/80'));
-                    const meHighlight = item.isMe ? 'ring-1 ring-sky-400' : '';
-                    const titleHtml = buildPlayerEquippedBadgeHtml(item.equippedAchievementId);
-
-                    let rightHtml = '';
-                    let subLine = item.stageProgressLabel;
-                    if (currentLeaderboardTab === 'stage') {
-                        rightHtml = `<div class="text-xs font-black text-emerald-400">通关数 ${item.clearedBadgesCount}</div>
-                                     <div class="text-[10px] text-slate-400">🏆 成就 ${item.achievementCount}/${ACHIEVEMENTS.length}</div>`;
-                    } else if (currentLeaderboardTab === 'endless') {
-                        const eStat = getPlayerChallengeStatForDiff(item, 'endless', currentLeaderboardDiff);
-                        const diffLabel = DIFF_NAME_MAP[eStat.diffId] || '普通';
-                        subLine = eStat.maxFloor > 0
-                            ? `<span class="px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-500/40 text-[10px] mr-1">${diffLabel}难度</span>无尽征途最高纪录`
-                            : `尚未参与${currentLeaderboardDiff === 'all' ? '' : `【${diffLabel}】`}无限挑战`;
-                        rightHtml = `<div class="text-xs font-black text-purple-300">♾️ 第 ${eStat.maxFloor || 0} 层</div>
-                                     <div class="text-[10px] text-amber-300 font-semibold">${eStat.maxFloor > 0 ? `${diffLabel}难度` : '无记录'}</div>`;
-                    } else if (currentLeaderboardTab === 'ach') {
-                        rightHtml = `<div class="text-xs font-black text-amber-400">🏆 ${item.achievementCount} / ${ACHIEVEMENTS.length}</div>
-                                     <div class="text-[10px] text-slate-400">通关数 ${item.clearedBadgesCount}</div>`;
-                    } else if (currentLeaderboardTab === 'damage') {
                         const dStat = getPlayerChallengeStatForDiff(item, 'damage', currentLeaderboardDiff);
                         const diffLabel = DIFF_NAME_MAP[dStat.diffId] || '普通';
                         const stgNum = dStat.maxStage || 1;
                         subLine = dStat.maxDamage > 0
-                            ? `<span class="px-1.5 py-0.2 rounded bg-rose-950 text-rose-300 border border-rose-500/40 text-[10px] mr-1">${diffLabel}·第${stgNum}/3关</span>消耗 ${dStat.bestRounds || 1} 回合`
+                            ? `<span class="inline-block whitespace-nowrap px-1.5 py-0.2 rounded bg-rose-950 text-rose-300 border border-rose-500/40 text-[10px] mr-1">${diffLabel}·第${stgNum}/3关</span><span class="whitespace-nowrap">消耗 ${dStat.bestRounds || 1} 回合</span>`
                             : `尚未参与${currentLeaderboardDiff === 'all' ? '' : `【${diffLabel}】`}伤害挑战`;
-                        rightHtml = `<div class="text-xs font-black text-rose-400">⚡ ${dStat.maxDamage > 0 ? `第${stgNum}/3关 · ${dStat.bestRounds || 1}回合` : '无记录'}</div>
-                                     <div class="text-[10px] text-amber-300 font-semibold">💥 伤害 ${(dStat.maxDamage || 0).toLocaleString()}</div>`;
+                        rightHtml = `<div class="text-xs font-black text-rose-400 whitespace-nowrap">⚡ ${dStat.maxDamage > 0 ? `第${stgNum}/3关 · ${dStat.bestRounds || 1}回合` : '无记录'}</div>
+                                     <div class="text-[10px] text-amber-300 font-semibold whitespace-nowrap">💥 伤害 ${formatCompactNumber(dStat.maxDamage)}</div>`;
                     } else {
                         const sStat = getPlayerChallengeStatForDiff(item, 'survival', currentLeaderboardDiff);
                         const diffLabel = DIFF_NAME_MAP[sStat.diffId] || '普通';
                         const stgNum = sStat.maxStage || 1;
                         subLine = sStat.maxRounds > 0
-                            ? `<span class="px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-[10px] mr-1">${diffLabel}·第${stgNum}/3关</span>累计承伤 ${(sStat.totalDamageTaken || 0).toLocaleString()}`
+                            ? `<span class="inline-block whitespace-nowrap px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-[10px] mr-1">${diffLabel}·第${stgNum}/3关</span><span class="whitespace-nowrap">承伤 ${formatCompactNumber(sStat.totalDamageTaken)}</span>`
                             : `尚未参与${currentLeaderboardDiff === 'all' ? '' : `【${diffLabel}】`}生存挑战`;
-                        rightHtml = `<div class="text-xs font-black text-emerald-400">🛡️ ${sStat.maxRounds || 0} 回合</div>
-                                     <div class="text-[10px] text-slate-300 font-semibold">${sStat.maxRounds > 0 ? `第 ${stgNum}/3 关 · 承伤 ${(sStat.totalDamageTaken || 0).toLocaleString()}` : '无记录'}</div>`;
+                        rightHtml = `<div class="text-xs font-black text-emerald-400 whitespace-nowrap">🛡️ ${sStat.maxRounds || 0} 回合</div>
+                                     <div class="text-[10px] text-slate-300 font-semibold whitespace-nowrap">${sStat.maxRounds > 0 ? `第 ${stgNum}/3 关 · 承伤 ${formatCompactNumber(sStat.totalDamageTaken)}` : '无记录'}</div>`;
                     }
 
                     return `
-                        <div class="p-3 rounded-xl border ${rankColor} ${meHighlight} flex items-center justify-between transition">
-                            <div class="flex items-center space-x-3 min-w-0 pr-2">
+                        <div class="p-3 rounded-xl border ${rankColor} ${meHighlight} flex items-center justify-between gap-2 transition">
+                            <div class="flex items-center space-x-2.5 flex-1 min-w-0">
                                 <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs font-black ${rank <= 3 ? 'text-amber-400 text-base' : 'text-slate-400'} flex-shrink-0">
                                     ${rankBadge}
                                 </div>
-                                <div class="min-w-0">
-                                    <div class="flex flex-wrap items-center gap-1.5">
-                                        <span class="text-xs font-black ${item.isMe ? 'text-sky-300' : 'text-slate-100'} truncate">${item.playerName}${item.isMe ? ' (我)' : ''}</span>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-1">
+                                        <span class="text-xs font-black ${item.isMe ? 'text-sky-300' : 'text-slate-100'} truncate max-w-full">${item.playerName}${item.isMe ? ' (我)' : ''}</span>
                                         ${titleHtml}
                                     </div>
-                                    <p class="text-[11px] text-amber-400/90 mt-0.5">${subLine}</p>
+                                    <p class="text-[11px] text-amber-400/90 mt-0.5 leading-snug">${subLine}</p>
                                 </div>
                             </div>
                             <div class="text-right flex-shrink-0">
