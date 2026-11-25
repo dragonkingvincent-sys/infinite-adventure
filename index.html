@@ -15992,6 +15992,7 @@
                     listData = listData.filter(p => p.isMe || getPlayerChallengeStatForDiff(p, 'endless', currentLeaderboardDiff).maxFloor > 0);
                 }
 
+                // 1. 排序逻辑
                 const sorted = listData.sort((a, b) => {
                     if (currentLeaderboardTab === 'stage') {
                         if (b.stageScore !== a.stageScore) return b.stageScore - a.stageScore;
@@ -16006,6 +16007,65 @@
                     } else if (currentLeaderboardTab === 'ach') {
                         if (b.achievementCount !== a.achievementCount) return b.achievementCount - a.achievementCount;
                         return b.stageScore - a.stageScore;
+                    } else if (currentLeaderboardTab === 'damage') {
+                        const statA = getPlayerChallengeStatForDiff(a, 'damage', currentLeaderboardDiff);
+                        const statB = getPlayerChallengeStatForDiff(b, 'damage', currentLeaderboardDiff);
+                        if ((statB.maxDamage || 0) <= 0 && (statA.maxDamage || 0) <= 0) return 0;
+                        if ((statB.maxDamage || 0) <= 0) return -1;
+                        if ((statA.maxDamage || 0) <= 0) return 1;
+                        return isBetterDamageRecord(statB, statA, currentLeaderboardDiff !== 'all') ? 1 : -1;
+                    } else {
+                        const statA = getPlayerChallengeStatForDiff(a, 'survival', currentLeaderboardDiff);
+                        const statB = getPlayerChallengeStatForDiff(b, 'survival', currentLeaderboardDiff);
+                        if ((statB.maxRounds || 0) <= 0 && (statA.maxRounds || 0) <= 0) return 0;
+                        if ((statB.maxRounds || 0) <= 0) return -1;
+                        if ((statA.maxRounds || 0) <= 0) return 1;
+                        return isBetterSurvivalRecord(statB, statA, currentLeaderboardDiff !== 'all') ? 1 : -1;
+                    }
+                });
+
+                // 2. 更新我的当前排名
+                const myIdx = sorted.findIndex(x => x.isMe);
+                if (myRankEl) {
+                    myRankEl.textContent = myIdx >= 0
+                        ? `我的当前排名：第 ${myIdx + 1} 名（共 ${sorted.length} 位玩家）`
+                        : `共 ${sorted.length} 位玩家上榜`;
+                }
+
+                if (sorted.length === 0) {
+                    listEl.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">暂无上榜记录</div>`;
+                    return;
+                }
+
+                // 3. 渲染玩家卡片（含超大数字自动缩写与防挤压布局）
+                listEl.innerHTML = sorted.map((item, idx) => {
+                    const rank = idx + 1;
+                    const rankBadge = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : `#${rank}`));
+                    const rankColor = rank === 1
+                        ? 'border-amber-400/70 bg-amber-950/20'
+                        : (rank === 2 ? 'border-slate-400/50 bg-slate-900/90' : (rank === 3 ? 'border-amber-700/60 bg-slate-900/90' : 'border-slate-800 bg-slate-950/80'));
+                    const meHighlight = item.isMe ? 'ring-1 ring-sky-400 border-sky-400/80 bg-sky-950/30' : '';
+                    const titleHtml = buildPlayerEquippedBadgeHtml(item.equippedAchievementId);
+
+                    let subLine = '';
+                    let rightHtml = '';
+
+                    if (currentLeaderboardTab === 'stage') {
+                        subLine = item.stageProgressLabel || '尚未通关章节';
+                        rightHtml = `<div class="text-xs font-black text-amber-400 whitespace-nowrap">🏰 ${item.stageScore || 0} 分</div>
+                                     <div class="text-[10px] text-slate-400 whitespace-nowrap">通关徽章 ${item.clearedBadgesCount || 0}</div>`;
+                    } else if (currentLeaderboardTab === 'endless') {
+                        const eStat = getPlayerChallengeStatForDiff(item, 'endless', currentLeaderboardDiff);
+                        const diffLabel = DIFF_NAME_MAP[eStat.diffId] || '普通';
+                        subLine = eStat.maxFloor > 0
+                            ? `<span class="inline-block whitespace-nowrap px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-500/40 text-[10px] mr-1">${diffLabel}难度</span><span class="whitespace-nowrap">最高到达第 ${eStat.maxFloor} 层</span>`
+                            : `尚未参与${currentLeaderboardDiff === 'all' ? '' : `【${diffLabel}】`}无限挑战`;
+                        rightHtml = `<div class="text-xs font-black text-purple-400 whitespace-nowrap">♾️ ${eStat.maxFloor > 0 ? `第 ${eStat.maxFloor} 层` : '无记录'}</div>
+                                     <div class="text-[10px] text-slate-400 whitespace-nowrap">${eStat.maxFloor > 0 ? `${diffLabel}难度` : '—'}</div>`;
+                    } else if (currentLeaderboardTab === 'ach') {
+                        subLine = item.stageProgressLabel || '冒险探索中';
+                        rightHtml = `<div class="text-xs font-black text-amber-400 whitespace-nowrap">🏆 ${item.achievementCount || 0} 项</div>
+                                     <div class="text-[10px] text-slate-400 whitespace-nowrap">成就进度</div>`;
                     } else if (currentLeaderboardTab === 'damage') {
                         const dStat = getPlayerChallengeStatForDiff(item, 'damage', currentLeaderboardDiff);
                         const diffLabel = DIFF_NAME_MAP[dStat.diffId] || '普通';
