@@ -829,6 +829,10 @@
                     </div>
                     <button id="btn-close-bestiary" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">✕</button>
                 </div>
+                <div class="px-4 py-2 bg-slate-950 border-b border-slate-800 grid grid-cols-2 gap-2 flex-shrink-0">
+                    <button id="tab-bestiary-monster" type="button" class="py-1.5 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow transition">👾 怪物图鉴</button>
+                    <button id="tab-bestiary-road" type="button" class="py-1.5 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700 transition">🗺️ 道路图鉴</button>
+                </div>
 
                 <div id="bestiary-list" class="scroll-container flex-1 overflow-y-auto p-4 space-y-2.5"></div>
                 <div id="bestiary-detail-panel" class="hidden border-t border-slate-700 bg-slate-950 p-4 max-h-[55%] overflow-y-auto scroll-container space-y-3"></div>
@@ -1092,7 +1096,7 @@
             {
                 id: 'prophet',
                 name: '【先知】',
-                desc: '自身命中 +20；可以提前看到下一回合的关卡是什么事件；战斗中可以看到敌方头上的行动意图图标（迷茫/普攻/技能/防御/休息等）。'
+                desc: '初始命中 +50（每经过 10 关额外 +50）；道路选择界面可直接透视前方事件，战斗中可预览所有怪物的具体行动意图。'
             },
             {
                 id: 'double_reward',
@@ -2713,6 +2717,8 @@
             insiderBuffEnabled: false,
             settings: { bgm: true, sfx: true, shake: true },
             bestiaryStatus: {},
+            roadBestiaryStatus: {},
+            bestiaryTab: 'monster',
             selectedMonsterId: null,
             prepStep: 1,
             selectedClassId: 'freelancer',
@@ -2789,6 +2795,7 @@
             state.activeSpecConversion = null;
             state.highTierClassUnlocked = false;
             state.insiderBuffEnabled = false;
+         state.roadBestiaryStatus = {};
         }
 
         function getAccountStorageKey(accName) {
@@ -2857,6 +2864,7 @@
                     const parsed = JSON.parse(raw);
                     if (parsed.unlockedClasses) Object.assign(state.unlockedClasses, parsed.unlockedClasses);
                     if (parsed.bestiaryStatus) Object.assign(state.bestiaryStatus, parsed.bestiaryStatus);
+                    if (parsed.roadBestiaryStatus) Object.assign(state.roadBestiaryStatus, parsed.roadBestiaryStatus);
                     if (parsed.unlockedAchievements) Object.assign(state.unlockedAchievements, parsed.unlockedAchievements);
                     if (parsed.stageClearRecords) Object.assign(state.stageClearRecords, parsed.stageClearRecords);
                     if (parsed.challengeRecords) Object.assign(state.challengeRecords, parsed.challengeRecords);
@@ -2877,6 +2885,7 @@
                 const payload = {
                     unlockedClasses: state.unlockedClasses,
                     bestiaryStatus: state.bestiaryStatus,
+                    roadBestiaryStatus: state.roadBestiaryStatus,
                     unlockedAchievements: state.unlockedAchievements,
                     stageClearRecords: state.stageClearRecords,
                     challengeRecords: state.challengeRecords,
@@ -4931,8 +4940,8 @@
                 : getAchievementBonusStats();
             const curFloor = (state.run && state.run.floor) ? state.run.floor : 1;
             const hasProphet = p.talentId === 'prophet' || (Array.isArray(p.talentIds) && p.talentIds.includes('prophet'));
-            const prophetHit = hasProphet ? 20 * (1 + Math.floor(Math.max(0, curFloor - 1) / 10)) : 0;
-
+            const prophetHit = hasProphet ? (50 * (1 + Math.floor(Math.max(0, curFloor - 1) / 10))) : 0;
+            
             let maxHp = cls.base.hp + p.bonusHp + achBonus.hp;
             let maxMp = cls.base.mp + (p.bonusMp || 0) + achBonus.mp;
             let atk = cls.base.atk + p.bonusAtk + achBonus.atk;
@@ -11551,7 +11560,7 @@
                     };
                 }
             }
-
+            if (road && run.currentEvent) recordRoadBestiaryFromEvent(road.type, run.currentEvent);
             if (run.battle && run.battle.monsters.some(m => m.tier === '英雄')) {
                 run.encounteredHero = true;
             }
@@ -12312,7 +12321,7 @@
                     `);
                 }
                 if (hasProphetT) {
-                    const prophetHit = 20 * (1 + Math.floor(Math.max(0, run.floor - 1) / 10));
+                    const prophetHit = 50 * (1 + Math.floor(Math.max(0, run.floor - 1) / 10));
                     tParts.push(`<b class="text-emerald-400">【先知(命+${prophetHit})】</b>`);
                 }
                 talentBar.innerHTML = `
@@ -15266,11 +15275,237 @@
                 knob.className = 'block w-5 h-5 rounded-full bg-slate-300 transform translate-x-0 transition-transform';
             }
         }
+        const ROAD_BESTIARY_CONFIG = [
+            {
+                id: '山洞', name: '⛰️ 山洞', unlockHint: '第 1 关起开放',
+                events: [
+                    { key: 'elite', pct: 75, label: '精英战【被打扰的熊】（伴生幼熊）' },
+                    { key: 'chest', pct: 25, label: '神秘宝箱（铜币 + 随机技能书）' }
+                ]
+            },
+            {
+                id: '树林', name: '🌲 树林', unlockHint: '第 1 关起开放',
+                events: [
+                    { key: 'wolf', pct: 50, label: '普通战【落单的狼】（10% 伴生狈）' },
+                    { key: 'fruit', pct: 30, label: '树林奇遇【果树】（回30%血蓝 / 留着下次+5自由点）' },
+                    { key: 'elite', pct: 10, label: '精英战【狼王 / 狼人】' },
+                    { key: 'chest', pct: 10, label: '神秘宝箱（铜币 + 随机技能书）' }
+                ]
+            },
+            {
+                id: '小路', name: '🛤️ 小路', unlockHint: '第 1 关起开放',
+                events: [
+                    { key: 'bandit', pct: 40, label: '普通战【山贼】（有几率偷钱）' },
+                    { key: 'rest', pct: 30, label: '野外【休息处】（回复状态）' },
+                    { key: 'shop', pct: 20, label: '野外【普通商店】（买书 / 附魔 / 药水）' },
+                    { key: 'adventure', pct: 10, label: '通用【奇遇事件】（祝福 / 属性增益）' }
+                ]
+            },
+            {
+                id: '废墟', name: '🏚️ 废墟', unlockHint: '第 11 关起开放',
+                events: [
+                    { key: 'monster', pct: 80, label: '废墟怪物（30% 精英骷髅召唤师 / 70% 满队3骷髅）' },
+                    { key: 'adventure', pct: 10, label: '通用【奇遇事件】' },
+                    { key: 'danger', pct: 10, label: '通用【危险事件】' }
+                ]
+            },
+            {
+                id: '沼泽', name: '🐸 沼泽', unlockHint: '第 11 关起开放',
+                events: [
+                    { key: 'frog', pct: 50, label: '普通战【毒蛙】' },
+                    { key: 'dart_frog', pct: 20, label: '精英战【喷箭毒蛙】' },
+                    { key: 'danger', pct: 20, label: '通用【危险事件】' },
+                    { key: 'chest', pct: 10, label: '神秘宝箱' }
+                ]
+            },
+            {
+                id: '墓地', name: '🪦 墓地', unlockHint: '第 21 关起开放',
+                events: [
+                    { key: 'ghost', pct: 50, label: '普通战【游魂】（鬼身）' },
+                    { key: 'soul_ctrl', pct: 20, label: '精英战【灵魂操控者】' },
+                    { key: 'tomb_raider', pct: 15, label: '特殊事件【盗墓贼】（主动攻击必先手）' },
+                    { key: 'chest', pct: 10, label: '神秘宝箱' },
+                    { key: 'adventure', pct: 5, label: '通用【奇遇事件】' }
+                ]
+            },
+            {
+                id: '异界', name: '🌌 异界', unlockHint: '第 31 关起开放',
+                events: [
+                    { key: 'esper', pct: 30, label: '精英战【异能者】' },
+                    { key: 'shop', pct: 20, label: '野外【普通商店】' },
+                    { key: 'otherworld_shop', pct: 10, label: '特殊【异界特化商店】（破限书 / 高级强化）' },
+                    { key: 'adventure', pct: 10, label: '异界【奇遇事件】（含奇怪的异能）' },
+                    { key: 'danger', pct: 10, label: '通用【危险事件】' },
+                    { key: 'chest', pct: 10, label: '神秘宝箱' },
+                    { key: 'boss', pct: 5, label: '首领战【规律操控家】' },
+                    { key: 'lost', pct: 5, label: '异界【迷失】（接下来 10 次全为异界）' }
+                ]
+            },
+            {
+                id: '末地', name: '🌑 末地', unlockHint: '第 41 关起开放',
+                events: [
+                    { key: 'wanderer', pct: 60, label: '精英战【终末徘徊者】' },
+                    { key: 'soundwave', pct: 15, label: '首领战【末地声波】' },
+                    { key: 'danger', pct: 10, label: '通用【危险事件】' },
+                    { key: 'portal', pct: 10, label: '特殊【末地传送门】（直达下一整十关首领战）' },
+                    { key: 'hero', pct: 5, label: '英雄战【末地终焉】' }
+                ]
+            }
+        ];
+
+        function detectRoadEventBookKey(roadType, ev) {
+            if (!roadType || !ev) return null;
+            const t = ev.type || '';
+            const mIds = Array.isArray(ev.monsters) ? ev.monsters.map(m => m.id) : [];
+            const isAdv = ['senior_blessing', 'blessing', 'ruins_ascendant', 'ruins_sword_immortal', 'strange_esper_blessing', 'tutorial_stage_1'].includes(t);
+            const isDanger = ['ruins_danger', 'swamp_danger'].includes(t);
+
+            if (roadType === '山洞') return t === 'chest' ? 'chest' : 'elite';
+            if (roadType === '树林') {
+                if (t === 'chest') return 'chest';
+                if (t === 'fruit_tree') return 'fruit';
+                if (mIds.includes('wolf_king') || mIds.includes('werewolf_elite')) return 'elite';
+                return 'wolf';
+            }
+            if (roadType === '小路') {
+                if (t === 'shop') return 'shop';
+                if (t === 'rest') return 'rest';
+                if (isAdv) return 'adventure';
+                return 'bandit';
+            }
+            if (roadType === '废墟') {
+                if (isAdv) return 'adventure';
+                if (isDanger) return 'danger';
+                return 'monster';
+            }
+            if (roadType === '沼泽') {
+                if (t === 'chest') return 'chest';
+                if (isDanger) return 'danger';
+                if (mIds.includes('dart_frog_elite')) return 'dart_frog';
+                return 'frog';
+            }
+            if (roadType === '墓地') {
+                if (t === 'chest') return 'chest';
+                if (isAdv) return 'adventure';
+                if (t === 'tomb_raider_event' || mIds.includes('tomb_raider')) return 'tomb_raider';
+                if (mIds.includes('soul_manipulator')) return 'soul_ctrl';
+                return 'ghost';
+            }
+            if (roadType === '异界') {
+                if (t === 'otherworld_shop') return 'otherworld_shop';
+                if (t === 'shop') return 'shop';
+                if (isAdv) return 'adventure';
+                if (isDanger) return 'danger';
+                if (t === 'chest') return 'chest';
+                if (t === 'otherworld_lost') return 'lost';
+                if (mIds.includes('law_manipulator')) return 'boss';
+                return 'esper';
+            }
+            if (roadType === '末地') {
+                if (isDanger) return 'danger';
+                if (t === 'end_portal') return 'portal';
+                if (mIds.includes('end_demise')) return 'hero';
+                if (mIds.includes('end_soundwave')) return 'soundwave';
+                return 'wanderer';
+            }
+            return null;
+        }
+
+        function recordRoadBestiaryFromEvent(roadType, ev) {
+            const cfg = ROAD_BESTIARY_CONFIG.find(r => r.id === roadType);
+            if (!cfg) return;
+            const evKey = detectRoadEventBookKey(roadType, ev);
+            if (!evKey) return;
+            if (!state.roadBestiaryStatus) state.roadBestiaryStatus = {};
+            if (!state.roadBestiaryStatus[roadType]) state.roadBestiaryStatus[roadType] = {};
+            if (!state.roadBestiaryStatus[roadType][evKey]) {
+                state.roadBestiaryStatus[roadType][evKey] = true;
+                savePersistedGameData(true);
+                const evMeta = cfg.events.find(e => e.key === evKey);
+                if (evMeta) {
+                    showToast(`🗺️ 解锁道路图鉴：${cfg.name}（${evMeta.pct}% ${evMeta.label.split('（')[0]}）！`);
+                }
+            }
+        }
 
         function renderBestiaryModal() {
             const listEl = document.getElementById('bestiary-list');
             const progressEl = document.getElementById('bestiary-progress-text');
             const detailEl = document.getElementById('bestiary-detail-panel');
+            const tabMon = document.getElementById('tab-bestiary-monster');
+            const tabRoad = document.getElementById('tab-bestiary-road');
+            if (tabMon && tabRoad) {
+                tabMon.className = state.bestiaryTab !== 'road'
+                    ? 'py-1.5 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow transition'
+                    : 'py-1.5 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700 transition';
+                tabRoad.className = state.bestiaryTab === 'road'
+                    ? 'py-1.5 rounded-xl text-xs font-black bg-amber-500 text-slate-950 shadow transition'
+                    : 'py-1.5 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700 transition';
+
+                tabMon.onclick = () => {
+                    playClickSfx();
+                    state.bestiaryTab = 'monster';
+                    renderBestiaryModal();
+                };
+                tabRoad.onclick = () => {
+                    playClickSfx();
+                    state.bestiaryTab = 'road';
+                    renderBestiaryModal();
+                };
+            }
+
+            if (state.bestiaryTab === 'road') {
+                detailEl.classList.add('hidden');
+                detailEl.innerHTML = '';
+                const openedRoads = ROAD_BESTIARY_CONFIG.filter(r => state.roadBestiaryStatus && state.roadBestiaryStatus[r.id] && Object.keys(state.roadBestiaryStatus[r.id]).length > 0).length;
+                progressEl.textContent = `已探索道路 ${openedRoads} / ${ROAD_BESTIARY_CONFIG.length} · 仅进入过的道路与事件会显示概率`;
+
+                listEl.innerHTML = ROAD_BESTIARY_CONFIG.map(road => {
+                    const unlockedMap = (state.roadBestiaryStatus && state.roadBestiaryStatus[road.id]) || {};
+                    const unlockedEvents = road.events.filter(e => !!unlockedMap[e.key]);
+                    const knownPct = unlockedEvents.reduce((sum, e) => sum + e.pct, 0);
+                    const unknownPct = Math.max(0, 100 - knownPct);
+                    const isRoadOpened = unlockedEvents.length > 0;
+
+                    return `
+                        <div class="p-3.5 rounded-2xl border ${isRoadOpened ? 'bg-slate-900/95 border-slate-700' : 'bg-slate-950/60 border-slate-800/70 opacity-70'} space-y-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-black ${isRoadOpened ? 'text-amber-400' : 'text-slate-500'}">${road.name}</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">${road.unlockHint}</span>
+                                </div>
+                                <span class="text-[11px] font-black ${knownPct >= 100 ? 'text-emerald-400' : (isRoadOpened ? 'text-sky-400' : 'text-slate-500')}">
+                                    ${knownPct >= 100 ? '✨ 100% 探索完毕' : (isRoadOpened ? `探索度 ${knownPct}%` : '🔒 未探索')}
+                                </span>
+                            </div>
+
+                            <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                                <div class="h-full ${knownPct >= 100 ? 'bg-emerald-400' : 'bg-amber-400'} transition-all" style="width:${knownPct}%"></div>
+                            </div>
+
+                            ${isRoadOpened ? `
+                                <div class="space-y-1.5 text-xs">
+                                    ${unlockedEvents.map(ev => `
+                                        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800 gap-2">
+                                            <span class="text-slate-200 leading-snug">✅ ${ev.label}</span>
+                                            <span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-black text-[11px] flex-shrink-0">${ev.pct}%</span>
+                                        </div>
+                                    `).join('')}
+                                    ${unknownPct > 0 ? `
+                                        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950/50 border border-dashed border-slate-700 gap-2">
+                                            <span class="text-slate-500">❓ 未知事件（继续进入该道路探索解锁）</span>
+                                            <span class="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 font-black text-[11px] flex-shrink-0">${unknownPct}%</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : `
+                                <p class="text-[11px] text-slate-500">❓ 100% 未知 —— 进入一次【${road.name}】即可开启该道路图鉴</p>
+                            `}
+                        </div>
+                    `;
+                }).join('');
+                return;
+            }
 
             let killedCount = 0, seenCount = 0;
             MONSTER_BESTIARY.forEach(m => {
